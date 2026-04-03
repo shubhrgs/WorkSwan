@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Microsoft To Do clone - tasks, custom reminders, lists, minimalistic design">
+  <link rel="manifest" href="manifest.json">
+  <title>Microsoft To Do · PWA</title>
+  <!-- Font Awesome 6 (free icons) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Google Fonts: Inter (minimalist) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif;
+      background: #f5f5f5;
+      color: #1e1e2f;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* App container */
+    .app {
+      display: flex;
+      height: 100vh;
+      width: 100%;
+      background: #fff;
+      box-shadow: 0 0 20px rgba(0,0,0,0.02);
+    }
+
+    /* ========= SIDEBAR (Microsoft style) ========= */
+    .sidebar {
+      width: 280px;
+      background: #fafafa;
+      border-right: 1px solid #eaeef2;
+      display: flex;
+      flex-direction: column;
+      padding: 28px 16px 20px 20px;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+      padding-left: 8px;
+    }
+    .logo-area i {
+      font-size: 28px;
+      color: #2d7aff;
+    }
+    .logo-area h2 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+      color: #201f1e;
+    }
+
+    .nav-group {
+      margin-bottom: 28px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-weight: 500;
+      font-size: 15px;
+      color: #3b3a39;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 4px;
+    }
+    .nav-item i {
+      width: 22px;
+      font-size: 18px;
+      color: #7a7a7a;
+    }
+    .nav-item.active {
+      background: #e9edf2;
+      color: #2d7aff;
+      font-weight: 500;
+    }
+    .nav-item.active i {
+      color: #2d7aff;
+    }
+    .nav-item:hover:not(.active) {
+      background: #f0f2f5;
+    }
+
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 12px 8px 8px 8px;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #8a8a8e;
+    }
+    .add-list-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6c6e7a;
+      font-size: 14px;
+      border-radius: 6px;
+      padding: 4px 6px;
+    }
+    .add-list-btn:hover {
+      background: #e9ecef;
+    }
+    .custom-list-container {
+      margin-top: 4px;
+    }
+    .custom-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+    .custom-list-item span {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      font-size: 15px;
+      font-weight: 450;
+    }
+    .delete-list {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: #a0a0a0;
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 6px;
+      padding: 4px 8px;
+    }
+    .custom-list-item:hover .delete-list {
+      opacity: 1;
+    }
+    .delete-list:hover {
+      background: #f0f0f0;
+      color: #d13438;
+    }
+
+    /* ========= MAIN CONTENT ========= */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      background: #ffffff;
+      padding: 28px 36px 40px 36px;
+    }
+    .view-header {
+      margin-bottom: 28px;
+    }
+    .view-header h1 {
+      font-size: 28px;
+      font-weight: 600;
+      color: #252423;
+    }
+    .task-count {
+      font-size: 14px;
+      color: #797979;
+      margin-top: 6px;
+    }
+
+    /* Add task row */
+    .add-task-row {
+      background: #ffffff;
+      border: 1px solid #e1e5ea;
+      border-radius: 14px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+      transition: 0.2s;
+    }
+    .add-task-row input {
+      flex: 1;
+      border: none;
+      font-size: 15px;
+      padding: 8px 0;
+      outline: none;
+      font-family: 'Inter', sans-serif;
+      background: transparent;
+    }
+    .add-task-row button {
+      background: #2d7aff;
+      border: none;
+      color: white;
+      border-radius: 30px;
+      padding: 8px 18px;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 13px;
+      transition: 0.2s;
+    }
+    .add-task-row button:hover {
+      background: #1e66e0;
+    }
+
+    /* Tasks list */
+    .tasks-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .task-card {
+      background: #ffffff;
+      border: 1px solid #edf0f3;
+      border-radius: 16px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.15s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .task-card:hover {
+      background: #fefefe;
+      border-color: #d2dce6;
+    }
+    .task-check {
+      transform: scale(1.2);
+      cursor: pointer;
+      accent-color: #2d7aff;
+    }
+    .task-info {
+      flex: 1;
+    }
+    .task-title {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .completed-task .task-title {
+      text-decoration: line-through;
+      color: #8f8f8f;
+    }
+    .task-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: #6f6f76;
+      flex-wrap: wrap;
+    }
+    .badge {
+      background: #f0f2f5;
+      border-radius: 30px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .badge i {
+      font-size: 11px;
+    }
+    .important-star {
+      color: #ffb443;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .task-actions {
+      display: flex;
+      gap: 12px;
+      color: #9a9aa5;
+    }
+    .task-actions i {
+      cursor: pointer;
+      font-size: 16px;
+      transition: 0.1s;
+    }
+    .task-actions i:hover {
+      color: #2d7aff;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: #aaa;
+      font-size: 15px;
+    }
+
+    /* MODAL (custom reminder / edit) */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      visibility: hidden;
+      opacity: 0;
+      transition: 0.2s;
+    }
+    .modal-overlay.active {
+      visibility: visible;
+      opacity: 1;
+    }
+    .modal-card {
+      background: white;
+      width: 90%;
+      max-width: 480px;
+      border-radius: 28px;
+      padding: 28px 26px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    }
+    .modal-card h3 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+    .modal-card input, .modal-card select, .modal-card textarea {
+      width: 100%;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      font-family: inherit;
+      font-size: 14px;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    .modal-buttons button {
+      padding: 8px 20px;
+      border-radius: 40px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .btn-primary {
+      background: #2d7aff;
+      color: white;
+    }
+    .toast-msg {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1f1f1f;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 60px;
+      font-size: 14px;
+      z-index: 1100;
+      opacity: 0;
+      transition: 0.2s;
+      pointer-events: none;
+    }
+    @media (max-width: 680px) {
+      .sidebar { width: 240px; }
+      .main-content { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar navigation -->
+  <div class="sidebar">
+    <div class="logo-area">
+      <i class="fas fa-check-circle"></i>
+      <h2>To Do</h2>
+    </div>
+    <div class="nav-group">
+      <div class="nav-item" data-view="all"><i class="fas fa-inbox"></i><span>All Tasks</span></div>
+      <div class="nav-item" data-view="important"><i class="fas fa-star"></i><span>Important</span></div>
+      <div class="nav-item" data-view="planned"><i class="fas fa-calendar-alt"></i><span>Planned</span></div>
+    </div>
+    <div class="list-header">
+      <span>MY LISTS</span>
+      <button class="add-list-btn" id="addListBtn"><i class="fas fa-plus"></i></button>
+    </div>
+    <div id="customListsContainer" class="custom-list-container"></div>
+  </div>
+
+  <div class="main-content">
+    <div class="view-header">
+      <h1 id="viewTitle">All Tasks</h1>
+      <div class="task-count" id="taskCount"></div>
+    </div>
+    <div class="add-task-row">
+      <i class="fas fa-plus-circle" style="color:#2d7aff"></i>
+      <input type="text" id="newTaskInput" placeholder="Add a task" autocomplete="off">
+      <button id="addTaskBtn">Add</button>
+    </div>
+    <div class="tasks-container" id="tasksContainer"></div>
+  </div>
+</div>
+<div id="modalOverlay" class="modal-overlay">
+  <div class="modal-card">
+    <h3 id="modalTitle">Edit task</h3>
+    <input type="text" id="taskTitleInput" placeholder="Task title">
+    <label style="font-size:13px; margin-bottom:6px; display:block">Due date</label>
+    <input type="datetime-local" id="dueDateInput">
+    <label style="font-size:13px; margin-bottom:6px; display:block">Custom reminder (alert)</label>
+    <input type="datetime-local" id="reminderTimeInput">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px">
+      <input type="checkbox" id="importantCheckbox"> <label>Mark as Important</label>
+    </div>
+    <div class="modal-buttons">
+      <button id="modalCancelBtn">Cancel</button>
+      <button id="modalSaveBtn" class="btn-primary">Save</button>
+    </div>
+  </div>
+</div>
+<div id="toastMsg" class="toast-msg"></div>
+
+<script>
+  // ---------- DATA MODEL ----------
+  let tasks = [];
+  let lists = [{ id: "default_inbox", name: "Inbox" }];
+  let currentView = { type: "smart", value: "all" };  // all, important, planned, or list: { type: "list", id }
+  
+  // helper: load/save
+  function saveData() {
+    localStorage.setItem("todo_clone_data", JSON.stringify({ tasks, lists }));
+  }
+  function loadData() {
+    const raw = localStorage.getItem("todo_clone_data");
+    if (raw) {
+      try {
+        const data = JSON.parse(raw);
+        tasks = data.tasks || [];
+        lists = data.lists || [{ id: "default_inbox", name: "Inbox" }];
+        if (!lists.some(l => l.id === "default_inbox")) lists.unshift({ id: "default_inbox", name: "Inbox" });
+      } catch(e) { console.warn(e); }
+    }
+    if (!tasks.length) {
+      // demo tasks with reminders
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(now.getDate() + 1);
+      tasks = [
+        { id: "1", title: "Review project proposal", completed: false, important: true, dueDate: tomorrow.toISOString(), reminderTime: null, notified: false, listId: "default_inbox" },
+        { id: "2", title: "Buy groceries", completed: false, important: false, dueDate: null, reminderTime: new Date(now.getTime() + 3600000).toISOString(), notified: false, listId: "default_inbox" },
+        { id: "3", title: "Call dentist", completed: true, important: false, dueDate: null, reminderTime: null, notified: false, listId: "default_inbox" }
+      ];
+      saveData();
+    }
+  }
+  
+  // get filtered tasks based on view
+  function getFilteredTasks() {
+    let filtered = [...tasks];
+    if (currentView.type === "smart") {
+      if (currentView.value === "important") filtered = filtered.filter(t => t.important === true);
+      else if (currentView.value === "planned") filtered = filtered.filter(t => t.dueDate !== null && t.dueDate !== "");
+      else if (currentView.value === "all") filtered = filtered;
+    } else if (currentView.type === "list") {
+      filtered = filtered.filter(t => t.listId === currentView.id);
+    }
+    return filtered.sort((a,b) => (a.completed === b.completed) ? 0 : a.completed ? 1 : -1);
+  }
+  
+  // render sidebar lists
+  function renderSidebar() {
+    const container = document.getElementById("customListsContainer");
+    container.innerHTML = "";
+    lists.forEach(list => {
+      if (list.id === "default_inbox") return;
+      const div = document.createElement("div");
+      div.className = "custom-list-item";
+      const isActive = (currentView.type === "list" && currentView.id === list.id);
+      if (isActive) div.style.background = "#e9edf2";
+      div.innerHTML = `
+        <span><i class="fas fa-list-ul"></i> ${escapeHtml(list.name)}</span>
+        <button class="delete-list" data-id="${list.id}"><i class="fas fa-trash-alt"></i></button>
+      `;
+      div.addEventListener("click", (e) => {
+        if (e.target.closest(".delete-list")) return;
+        currentView = { type: "list", id: list.id };
+        renderUI();
+      });
+      const delBtn = div.querySelector(".delete-list");
+      delBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (list.id === "default_inbox") return;
+        const confirmDel = confirm(`Delete list "${list.name}"? Tasks will be moved to Inbox.`);
+        if (confirmDel) {
+          tasks = tasks.map(t => t.listId === list.id ? { ...t, listId: "default_inbox" } : t);
+          lists = lists.filter(l => l.id !== list.id);
+          if (currentView.type === "list" && currentView.id === list.id) currentView = { type: "smart", value: "all" };
+          saveData();
+          renderUI();
+          showToast(`"${list.name}" deleted`);
+        }
+      });
+      container.appendChild(div);
+    });
+    // highlight active smart views
+    document.querySelectorAll(".nav-item").forEach(el => {
+      const view = el.getAttribute("data-view");
+      if (currentView.type === "smart" && currentView.value === view) el.classList.add("active");
+      else el.classList.remove("active");
+    });
+    // additional highlight for custom lists
+    if (currentView.type === "list") {
+      const activeListId = currentView.id;
+      document.querySelectorAll(".custom-list-item").forEach(item => {
+        const btn = item.querySelector(".delete-list");
+        if (btn && btn.getAttribute("data-id") === activeListId) item.style.background = "#e9edf2";
+        else item.style.background = "";
+      });
+    }
+  }
+  
+  function renderTasks() {
+    const container = document.getElementById("tasksContainer");
+    const filtered = getFilteredTasks();
+    const countUncompleted = filtered.filter(t => !t.completed).length;
+    document.getElementById("taskCount").innerText = `${filtered.length} task${filtered.length !== 1 ? 's' : ''} · ${countUncompleted} remaining`;
+    if (filtered.length === 0) {
+      container.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle" style="font-size:32px; opacity:0.4"></i><p>No tasks yet. Add one above ✨</p></div>`;
+      return;
+    }
+    container.innerHTML = filtered.map(task => `
+      <div class="task-card ${task.completed ? 'completed-task' : ''}" data-id="${task.id}">
+        <input type="checkbox" class="task-check" ${task.completed ? 'checked' : ''} data-id="${task.id}">
+        <div class="task-info">
+          <div class="task-title">
+            <span>${escapeHtml(task.title)}</span>
+            ${task.important ? '<i class="fas fa-star important-star" style="color:#ffb443" data-id="'+task.id+'"></i>' : '<i class="far fa-star important-star" data-id="'+task.id+'"></i>'}
+          </div>
+          <div class="task-meta">
+            ${task.dueDate ? `<span class="badge"><i class="far fa-calendar-alt"></i> ${formatDueDate(task.dueDate)}</span>` : ''}
+            ${task.reminderTime ? `<span class="badge"><i class="far fa-bell"></i> ${formatReminder(task.reminderTime)}</span>` : ''}
+          </div>
+        </div>
+        <div class="task-actions">
+          <i class="far fa-edit" data-action="edit" data-id="${task.id}"></i>
+          <i class="far fa-trash-alt" data-action="delete" data-id="${task.id}"></i>
+        </div>
+      </div>
+    `).join('');
+    // attach events dynamically
+    document.querySelectorAll('.task-check').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        const tid = cb.getAttribute('data-id');
+        const task = tasks.find(t => t.id === tid);
+        if (task) { task.completed = cb.checked; saveData(); renderUI(); }
+      });
+    });
+    document.querySelectorAll('.important-star').forEach(star => {
+      star.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const tid = star.getAttribute('data-id');
+        const task = tasks.find(t => t.id === tid);
+        if (task) { task.important = !task.important; saveData(); renderUI(); showToast(task.important ? 'Marked important' : 'Removed important'); }
+      });
+    });
+    document.querySelectorAll('[data-action="edit"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const tid = btn.getAttribute('data-id');
+        openEditModal(tid);
+      });
+    });
+    document.querySelectorAll('[data-action="delete"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const tid = btn.getAttribute('data-id');
+        if (confirm('Delete this task?')) {
+          tasks = tasks.filter(t => t.id !== tid);
+          saveData();
+          renderUI();
+          showToast('Task deleted');
+        }
+      });
+    });
+  }
+  
+  function formatDueDate(iso) {
+    if (!iso) return '';
+    const date = new Date(iso);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const target = new Date(date);
+    target.setHours(0,0,0,0);
+    const diff = (target - today) / (86400000);
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Tomorrow';
+    if (diff > 1 && diff < 7) return `${target.toLocaleDateString(undefined, {weekday:'short'})}`;
+    return target.toLocaleDateString();
+  }
+  function formatReminder(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+  
+  let editingTaskId = null;
+  function openEditModal(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    editingTaskId = taskId;
+    document.getElementById("taskTitleInput").value = task.title;
+    document.getElementById("dueDateInput").value = task.dueDate ? task.dueDate.slice(0,16) : '';
+    document.getElementById("reminderTimeInput").value = task.reminderTime ? task.reminderTime.slice(0,16) : '';
+    document.getElementById("importantCheckbox").checked = task.important;
+    document.getElementById("modalTitle").innerText = "Edit task";
+    document.getElementById("modalOverlay").classList.add("active");
+  }
+  
+  function closeModal() { document.getElementById("modalOverlay").classList.remove("active"); editingTaskId = null; }
+  
+  function saveModal() {
+    if (!editingTaskId) return;
+    const newTitle = document.getElementById("taskTitleInput").value.trim();
+    if (!newTitle) { showToast("Title required"); return; }
+    const due = document.getElementById("dueDateInput").value;
+    const reminder = document.getElementById("reminderTimeInput").value;
+    const important = document.getElementById("importantCheckbox").checked;
+    const task = tasks.find(t => t.id === editingTaskId);
+    if (task) {
+      task.title = newTitle;
+      task.dueDate = due ? new Date(due).toISOString() : null;
+      task.reminderTime = reminder ? new Date(reminder).toISOString() : null;
+      task.important = important;
+      task.notified = false; // reset notified flag on reminder change
+      saveData();
+      renderUI();
+      showToast("Task updated");
+    }
+    closeModal();
+  }
+  
+  function addTask(title, listId = null) {
+    if (!title.trim()) return false;
+    let targetList = listId;
+    if (!targetList) {
+      if (currentView.type === "list") targetList = currentView.id;
+      else targetList = "default_inbox";
+    }
+    const newTask = {
+      id: Date.now() + "-" + Math.random().toString(36),
+      title: title.trim(),
+      completed: false,
+      important: false,
+      dueDate: null,
+      reminderTime: null,
+      notified: false,
+      listId: targetList
+    };
+    tasks.unshift(newTask);
+    saveData();
+    renderUI();
+    return true;
+  }
+  
+  // Notification + reminder engine
+  let reminderInterval = null;
+  function requestNotificationPermission() {
+    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+      Notification.requestPermission();
+    }
+  }
+  function checkReminders() {
+    if (!("Notification" in window)) return;
+    const now = new Date();
+    let anyAlert = false;
+    tasks.forEach(task => {
+      if (task.reminderTime && !task.notified && !task.completed) {
+        const reminderDate = new Date(task.reminderTime);
+        if (reminderDate <= now) {
+          task.notified = true;
+          anyAlert = true;
+          if (Notification.permission === "granted") {
+            new Notification("⏰ Reminder", { body: `"${task.title}" is due now!`, icon: "https://cdn-icons-png.flaticon.com/512/599/599519.png" });
+          } else {
+            showToast(`Reminder: ${task.title}`);
+          }
+          saveData();
+        }
+      }
+    });
+    if (anyAlert) renderUI();
+  }
+  
+  function showToast(msg) {
+    const toast = document.getElementById("toastMsg");
+    toast.innerText = msg;
+    toast.style.opacity = "1";
+    setTimeout(() => { toast.style.opacity = "0"; }, 2300);
+  }
+  
+  function renderUI() {
+    let title = "";
+    if (currentView.type === "smart") {
+      if (currentView.value === "all") title = "All Tasks";
+      else if (currentView.value === "important") title = "Important";
+      else if (currentView.value === "planned") title = "Planned";
+    } else if (currentView.type === "list") {
+      const found = lists.find(l => l.id === currentView.id);
+      title = found ? found.name : "Inbox";
+    }
+    document.getElementById("viewTitle").innerText = title;
+    renderSidebar();
+    renderTasks();
+  }
+  
+  function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m;}); }
+  
+  // Add custom list
+  function addCustomList() {
+    let name = prompt("List name:");
+    if (name && name.trim()) {
+      const id = "list_" + Date.now();
+      lists.push({ id, name: name.trim() });
+      saveData();
+      renderUI();
+      currentView = { type: "list", id };
+      renderUI();
+      showToast(`List "${name}" created`);
+    }
+  }
+  
+  // Event listeners
+  document.getElementById("addTaskBtn").addEventListener("click", () => {
+    const input = document.getElementById("newTaskInput");
+    if (input.value.trim()) {
+      addTask(input.value);
+      input.value = "";
+    } else showToast("Write a task name");
+  });
+  document.getElementById("newTaskInput").addEventListener("keypress", (e) => {
+    if (e.key === "Enter") document.getElementById("addTaskBtn").click();
+  });
+  document.querySelectorAll(".nav-item").forEach(el => {
+    el.addEventListener("click", () => {
+      const view = el.getAttribute("data-view");
+      if (view) currentView = { type: "smart", value: view };
+      renderUI();
+    });
+  });
+  document.getElementById("addListBtn").addEventListener("click", addCustomList);
+  document.getElementById("modalCancelBtn").addEventListener("click", closeModal);
+  document.getElementById("modalSaveBtn").addEventListener("click", saveModal);
+  document.getElementById("modalOverlay").addEventListener("click", (e) => { if(e.target === document.getElementById("modalOverlay")) closeModal(); });
+  
+  // Init & reminder polling
+  loadData();
+  requestNotificationPermission();
+  renderUI();
+  setInterval(() => checkReminders(), 30000);
+  checkReminders();
+  
+  // optional: request notification again after click
+  window.addEventListener("load", () => { if (Notification.permission === "default") Notification.requestPermission(); });
+  
+  // ---- PWA Service Worker Registration ----
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').then(reg => {
+        console.log('Service Worker registered', reg);
+      }).catch(err => {
+        console.log('SW registration failed', err);
+      });
+    });
+  }
+</script>
+</body>
+</html>
