@@ -1,6 +1,6 @@
 {
-  "name": "Microsoft To Do Clone",
-  "short_name": "To Do",
+  "name": "WorkSwan",
+  "short_name": "WorkSwan",
   "description": "Minimalistic task manager with custom reminders, lists, and offline support.",
   "start_url": ".",
   "display": "standalone",
