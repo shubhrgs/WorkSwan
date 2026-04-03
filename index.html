@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff" id="themeColorMeta">
-  <meta name="description" content="Microsoft To Do clone - dark mode, recurrence, collapsible sidebar, mobile navigation">
+  <meta name="description" content="WorkSwan - minimalist task manager with lists, reminders, recurrence">
   <link rel="manifest" href="manifest.json">
   <title>WorkSwan</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -73,7 +73,6 @@
       transition: background 0.2s, color 0.2s;
     }
 
-    /* App container */
     .app {
       display: flex;
       height: 100vh;
@@ -81,7 +80,7 @@
       position: relative;
     }
 
-    /* ========= SIDEBAR (collapsible) ========= */
+    /* ========= SIDEBAR ========= */
     .sidebar {
       width: 280px;
       background: var(--sidebar-bg);
@@ -91,11 +90,10 @@
       padding: 28px 16px 20px 20px;
       overflow-y: auto;
       flex-shrink: 0;
-      transition: transform 0.25s ease, width 0.2s;
+      transition: transform 0.25s ease;
       z-index: 10;
     }
 
-    /* Sidebar hidden state (mobile-like navigation) */
     body.sidebar-hidden .sidebar {
       transform: translateX(-100%);
       position: absolute;
@@ -106,7 +104,6 @@
       width: 100%;
     }
 
-    /* Sidebar content styling */
     .logo-area {
       display: flex;
       align-items: center;
@@ -201,6 +198,15 @@
       align-items: center;
       font-size: 15px;
       font-weight: 450;
+      flex: 1;
+    }
+    .list-name-text {
+      cursor: text;
+      padding: 2px 4px;
+      border-radius: 6px;
+    }
+    .list-name-text:hover {
+      background: var(--nav-hover);
     }
     .delete-list {
       opacity: 0;
@@ -220,7 +226,6 @@
       color: #d13438;
     }
 
-    /* Dark mode toggle inside sidebar at bottom */
     .sidebar-footer {
       margin-top: auto;
       padding-top: 24px;
@@ -249,12 +254,11 @@
       flex-direction: column;
       overflow-y: auto;
       background: var(--bg-app);
-      padding: 28px 36px 40px 36px;
+      padding: 28px 36px 20px 36px;
       transition: all 0.2s;
       position: relative;
     }
 
-    /* Back button (visible only when sidebar hidden) */
     .back-nav {
       display: none;
       align-items: center;
@@ -270,11 +274,13 @@
     body.sidebar-hidden .back-nav {
       display: flex;
     }
-    .back-nav i {
-      font-size: 18px;
-    }
 
+    /* header with title and menu */
     .view-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
       margin-bottom: 28px;
     }
     .view-header h1 {
@@ -282,46 +288,74 @@
       font-weight: 600;
       color: var(--text-primary);
     }
+    .menu-dots {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--icon-color);
+      padding: 8px;
+      border-radius: 40px;
+    }
+    .menu-dots:hover {
+      background: var(--nav-hover);
+    }
     .task-count {
       font-size: 14px;
       color: var(--text-muted);
       margin-top: 6px;
+      width: 100%;
     }
 
-    .add-task-row {
-      background: var(--card-bg);
-      border: 1px solid var(--input-border);
-      border-radius: 16px;
-      padding: 12px 18px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 28px;
-    }
-    .add-task-row input {
-      flex: 1;
-      border: none;
-      font-size: 15px;
-      padding: 8px 0;
-      outline: none;
-      background: transparent;
-      color: var(--text-primary);
-    }
-    .add-task-row button {
-      background: #2d7aff;
-      border: none;
-      color: white;
-      border-radius: 40px;
-      padding: 8px 20px;
-      font-weight: 500;
-      cursor: pointer;
-    }
-
+    /* tasks container */
     .tasks-container {
       display: flex;
       flex-direction: column;
       gap: 10px;
+      margin-bottom: 24px;
     }
+
+    /* ADD TASK PANE (bottom) */
+    .add-task-pane {
+      background: var(--card-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 20px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: auto;
+      position: sticky;
+      bottom: 0;
+      background: var(--bg-app);
+      backdrop-filter: blur(4px);
+    }
+    .add-task-pane input {
+      flex: 1;
+      border: none;
+      font-size: 15px;
+      padding: 10px 0;
+      outline: none;
+      background: transparent;
+      color: var(--text-primary);
+    }
+    .add-task-pane button, .add-icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #2d7aff;
+      font-size: 20px;
+      padding: 0 8px;
+    }
+    .add-task-pane .add-text-btn {
+      background: #2d7aff;
+      color: white;
+      border-radius: 40px;
+      padding: 8px 20px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
     .task-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -452,21 +486,45 @@
       transition: 0.2s;
       pointer-events: none;
     }
-
+    /* sort dropdown */
+    .sort-menu {
+      position: absolute;
+      top: 70px;
+      right: 36px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      z-index: 200;
+      display: none;
+      overflow: hidden;
+    }
+    .sort-menu.show {
+      display: block;
+    }
+    .sort-menu div {
+      padding: 12px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    .sort-menu div:hover {
+      background: var(--nav-hover);
+    }
     @media (max-width: 680px) {
       .main-content { padding: 20px; }
       .sidebar { width: 260px; }
+      .sort-menu { right: 20px; top: 65px; }
     }
   </style>
 </head>
 <body>
 <div class="app">
-  <!-- Sidebar -->
   <div class="sidebar" id="sidebar">
     <div class="logo-area">
       <div class="logo-left">
         <i class="fas fa-check-circle"></i>
-        <h2>To Do</h2>
+        <h2>WorkSwan</h2>
       </div>
       <button class="close-sidebar-btn" id="closeSidebarBtn"><i class="fas fa-times"></i></button>
     </div>
@@ -480,8 +538,6 @@
       <button class="add-list-btn" id="addListBtn"><i class="fas fa-plus"></i></button>
     </div>
     <div id="customListsContainer" class="custom-list-container"></div>
-    
-    <!-- Dark mode toggle inside sidebar footer -->
     <div class="sidebar-footer">
       <div class="dark-mode-sidebar" id="darkModeSidebarBtn">
         <i class="fas fa-moon"></i> <span>Dark mode</span>
@@ -489,26 +545,34 @@
     </div>
   </div>
 
-  <!-- Main Content Area -->
   <div class="main-content">
-    <!-- Back navigation arrow (visible when sidebar hidden) -->
     <div class="back-nav" id="backNavBtn">
       <i class="fas fa-arrow-left"></i> <span>Back</span>
     </div>
     <div class="view-header">
       <h1 id="viewTitle">All Tasks</h1>
+      <button class="menu-dots" id="menuDotsBtn"><i class="fas fa-ellipsis-v"></i></button>
       <div class="task-count" id="taskCount"></div>
     </div>
-    <div class="add-task-row">
-      <i class="fas fa-plus-circle" style="color:#2d7aff"></i>
-      <input type="text" id="newTaskInput" placeholder="Add a task" autocomplete="off">
-      <button id="addTaskBtn">Add</button>
-    </div>
     <div class="tasks-container" id="tasksContainer"></div>
+    
+    <!-- Add task pane at bottom -->
+    <div class="add-task-pane">
+      <button class="add-icon-btn" id="addIconBtn"><i class="fas fa-plus-circle"></i></button>
+      <input type="text" id="newTaskInput" placeholder="Add a task" autocomplete="off">
+      <button class="add-text-btn" id="addTaskBtn">Add</button>
+    </div>
   </div>
 </div>
 
-<!-- Modal for edit / reminder / recurrence -->
+<!-- Sort dropdown -->
+<div class="sort-menu" id="sortMenu">
+  <div data-sort="name">Sort by name</div>
+  <div data-sort="created">Sort by creation date</div>
+  <div data-sort="due">Sort by due date</div>
+</div>
+
+<!-- Modal -->
 <div id="modalOverlay" class="modal-overlay">
   <div class="modal-card">
     <h3 id="modalTitle">Edit task</h3>
@@ -540,13 +604,13 @@
 <div id="toastMsg" class="toast-msg"></div>
 
 <script>
-  // ---------- DATA MODEL ----------
+  // ---------- DATA ----------
   let tasks = [];
   let lists = [{ id: "default_inbox", name: "Inbox" }];
   let currentView = { type: "smart", value: "all" };
   let editingTaskId = null;
+  let currentSort = "created"; // name, created, due
 
-  // Persistence
   function saveData() { localStorage.setItem("todo_clone_data", JSON.stringify({ tasks, lists })); }
   function loadData() {
     const raw = localStorage.getItem("todo_clone_data");
@@ -558,11 +622,47 @@
       const now = new Date();
       const tomorrow = new Date(now); tomorrow.setDate(now.getDate()+1);
       tasks = [
-        { id: "1", title: "Review project", completed: false, important: true, dueDate: tomorrow.toISOString(), reminderTime: null, notified: false, listId: "default_inbox", recurrence: null },
-        { id: "2", title: "Buy groceries", completed: false, important: false, dueDate: null, reminderTime: new Date(now.getTime()+3600000).toISOString(), notified: false, listId: "default_inbox", recurrence: null }
+        { id: "1", title: "Review project", completed: false, important: true, dueDate: tomorrow.toISOString(), reminderTime: null, notified: false, listId: "default_inbox", recurrence: null, createdAt: Date.now() - 86400000 },
+        { id: "2", title: "Buy groceries", completed: false, important: false, dueDate: null, reminderTime: new Date(now.getTime()+3600000).toISOString(), notified: false, listId: "default_inbox", recurrence: null, createdAt: Date.now() }
       ];
       saveData();
     }
+    // ensure each task has createdAt
+    tasks.forEach(t => { if(!t.createdAt) t.createdAt = Date.now(); });
+    saveData();
+  }
+
+  // Sorting
+  function sortTasks(taskArray) {
+    const sorted = [...taskArray];
+    switch(currentSort) {
+      case 'name':
+        sorted.sort((a,b) => a.title.localeCompare(b.title));
+        break;
+      case 'created':
+        sorted.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+        break;
+      case 'due':
+        sorted.sort((a,b) => {
+          let da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+          let db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+          return da - db;
+        });
+        break;
+      default: sorted.sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
+    }
+    return sorted;
+  }
+
+  function getFilteredTasks() {
+    let filtered = [...tasks];
+    if (currentView.type === "smart") {
+      if (currentView.value === "important") filtered = filtered.filter(t => t.important);
+      else if (currentView.value === "planned") filtered = filtered.filter(t => t.dueDate);
+    } else if (currentView.type === "list") {
+      filtered = filtered.filter(t => t.listId === currentView.id);
+    }
+    return sortTasks(filtered);
   }
 
   // Recurrence helpers
@@ -601,22 +701,11 @@
       reminderTime: newReminder,
       notified: false,
       listId: originalTask.listId,
-      recurrence: { ...originalTask.recurrence }
+      recurrence: { ...originalTask.recurrence },
+      createdAt: Date.now()
     };
   }
 
-  function getFilteredTasks() {
-    let filtered = [...tasks];
-    if (currentView.type === "smart") {
-      if (currentView.value === "important") filtered = filtered.filter(t => t.important);
-      else if (currentView.value === "planned") filtered = filtered.filter(t => t.dueDate);
-    } else if (currentView.type === "list") {
-      filtered = filtered.filter(t => t.listId === currentView.id);
-    }
-    return filtered.sort((a,b) => (a.completed === b.completed) ? 0 : a.completed ? 1 : -1);
-  }
-
-  // Render sidebar lists
   function renderSidebar() {
     const container = document.getElementById("customListsContainer");
     container.innerHTML = "";
@@ -625,16 +714,52 @@
       const div = document.createElement("div");
       div.className = "custom-list-item";
       if (currentView.type === "list" && currentView.id === list.id) div.style.background = "var(--nav-active-bg)";
-      div.innerHTML = `<span><i class="fas fa-list-ul"></i> ${escapeHtml(list.name)}</span>
-        <button class="delete-list" data-id="${list.id}"><i class="fas fa-trash-alt"></i></button>`;
+      const nameSpan = document.createElement("span");
+      nameSpan.innerHTML = `<i class="fas fa-list-ul"></i><span class="list-name-text" data-list-id="${list.id}">${escapeHtml(list.name)}</span>`;
+      const delBtn = document.createElement("button");
+      delBtn.className = "delete-list";
+      delBtn.setAttribute("data-id", list.id);
+      delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+      div.appendChild(nameSpan);
+      div.appendChild(delBtn);
+      
+      // Edit list name on click
+      const nameText = nameSpan.querySelector('.list-name-text');
+      nameText.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const oldName = list.name;
+        const input = document.createElement('input');
+        input.value = oldName;
+        input.style.width = '120px';
+        input.style.background = 'var(--card-bg)';
+        input.style.color = 'var(--text-primary)';
+        input.style.border = '1px solid var(--input-border)';
+        input.style.borderRadius = '8px';
+        input.style.padding = '4px 8px';
+        nameText.replaceWith(input);
+        input.focus();
+        const saveEdit = () => {
+          const newName = input.value.trim();
+          if(newName && newName !== oldName) {
+            list.name = newName;
+            saveData();
+            renderUI();
+            showToast(`List renamed to "${newName}"`);
+          } else if(!newName) showToast("Name cannot be empty");
+          else renderUI();
+        };
+        input.addEventListener('blur', saveEdit);
+        input.addEventListener('keypress', (e) => { if(e.key === 'Enter') saveEdit(); });
+      });
+      
       div.addEventListener("click", (e) => { 
-        if(!e.target.closest(".delete-list")) { 
+        if(!e.target.closest(".delete-list") && !e.target.closest('.list-name-text') && e.target !== input) { 
           currentView = { type: "list", id: list.id }; 
           renderUI();
-          hideSidebarAndShowBack();  // navigate to detail (hide sidebar)
+          hideSidebarAndShowBack();
         } 
       });
-      div.querySelector(".delete-list").addEventListener("click", (e) => {
+      delBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         if(confirm(`Delete "${list.name}"? Tasks move to Inbox`)) {
           tasks = tasks.map(t => t.listId === list.id ? { ...t, listId: "default_inbox" } : t);
@@ -646,7 +771,6 @@
       });
       container.appendChild(div);
     });
-    // highlight smart views
     document.querySelectorAll(".nav-item").forEach(el => {
       const view = el.getAttribute("data-view");
       if (currentView.type === "smart" && currentView.value === view) el.classList.add("active");
@@ -659,7 +783,7 @@
     const filtered = getFilteredTasks();
     const remaining = filtered.filter(t => !t.completed).length;
     document.getElementById("taskCount").innerText = `${filtered.length} task${filtered.length!==1?'s':''} · ${remaining} remaining`;
-    if(filtered.length===0) { container.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle" style="font-size:32px; opacity:0.4"></i><p>No tasks. Add one ✨</p></div>`; return; }
+    if(filtered.length===0) { container.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle" style="font-size:32px; opacity:0.4"></i><p>No tasks. Add one below ✨</p></div>`; return; }
     container.innerHTML = filtered.map(task => `
       <div class="task-card ${task.completed ? 'completed-task' : ''}" data-id="${task.id}">
         <input type="checkbox" class="task-check" ${task.completed ? 'checked' : ''} data-id="${task.id}">
@@ -745,7 +869,7 @@
     let target = listId || (currentView.type==="list" ? currentView.id : "default_inbox");
     const newTask = {
       id: Date.now()+'-'+Math.random().toString(36),
-      title: title.trim(), completed: false, important: false, dueDate: null, reminderTime: null, notified: false, listId: target, recurrence: null
+      title: title.trim(), completed: false, important: false, dueDate: null, reminderTime: null, notified: false, listId: target, recurrence: null, createdAt: Date.now()
     };
     tasks.unshift(newTask);
     saveData(); renderUI(); return true;
@@ -756,7 +880,6 @@
   function showToast(msg) { const t=document.getElementById("toastMsg"); t.innerText=msg; t.style.opacity='1'; setTimeout(()=>t.style.opacity='0',2300); }
   function escapeHtml(str) { return str.replace(/[&<>]/g, m=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
 
-  // UI update & navigation
   function renderUI() {
     let title="";
     if(currentView.type==="smart") title=currentView.value==="all"?"All Tasks":currentView.value==="important"?"Important":"Planned";
@@ -766,36 +889,26 @@
     renderTasks();
   }
 
-  // Sidebar visibility control (To Do style: hide sidebar after selecting an item)
   let isSidebarVisible = true;
   function setSidebarVisible(visible) {
     isSidebarVisible = visible;
-    if (visible) {
-      document.body.classList.remove("sidebar-hidden");
-    } else {
-      document.body.classList.add("sidebar-hidden");
-    }
+    if (visible) document.body.classList.remove("sidebar-hidden");
+    else document.body.classList.add("sidebar-hidden");
   }
-  function hideSidebarAndShowBack() {
-    setSidebarVisible(false);
-  }
-  function showSidebar() {
-    setSidebarVisible(true);
-  }
+  function hideSidebarAndShowBack() { setSidebarVisible(false); }
+  function showSidebar() { setSidebarVisible(true); }
 
-  // Dark mode
   function initDarkMode() { const saved=localStorage.getItem('darkMode'); if(saved==='true') document.body.classList.add('dark'); else document.body.classList.remove('dark'); }
   function toggleDarkMode() { document.body.classList.toggle('dark'); localStorage.setItem('darkMode', document.body.classList.contains('dark')); const meta=document.getElementById('themeColorMeta'); if(meta) meta.setAttribute('content', document.body.classList.contains('dark')?'#1e1e2e':'#ffffff'); }
 
-  // Reminders + Notifications
   function requestNotificationPermission() { if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); }
   function checkReminders() { if(!("Notification" in window)) return; const now=new Date(); tasks.forEach(t=>{ if(t.reminderTime && !t.notified && !t.completed && new Date(t.reminderTime)<=now) { t.notified=true; if(Notification.permission==="granted") new Notification("⏰ Reminder",{body:`"${t.title}" is due!`}); else showToast(`Reminder: ${t.title}`); saveData(); renderUI(); } }); }
 
-  // Event Listeners
+  // Event listeners
   document.getElementById("addTaskBtn").addEventListener("click",()=>{ const inp=document.getElementById("newTaskInput"); if(inp.value.trim()) addTask(inp.value); inp.value=""; });
+  document.getElementById("addIconBtn").addEventListener("click",()=>{ const inp=document.getElementById("newTaskInput"); if(inp.value.trim()) addTask(inp.value); inp.value=""; });
   document.getElementById("newTaskInput").addEventListener("keypress",e=>{if(e.key==="Enter") document.getElementById("addTaskBtn").click();});
   
-  // Navigation items: on click, update view AND hide sidebar (detail view)
   document.querySelectorAll(".nav-item").forEach(el=>{
     el.addEventListener("click",()=>{
       const v=el.getAttribute("data-view");
@@ -810,20 +923,19 @@
   document.getElementById("darkModeSidebarBtn").addEventListener("click",toggleDarkMode);
   document.getElementById("closeSidebarBtn").addEventListener("click", () => setSidebarVisible(false));
   document.getElementById("backNavBtn").addEventListener("click", () => setSidebarVisible(true));
-  
-  // Close modal on overlay click
   document.getElementById("modalOverlay").addEventListener("click",e=>{if(e.target===document.getElementById("modalOverlay")) closeModal();});
-
-  // Initial load
-  loadData();
-  initDarkMode();
-  requestNotificationPermission();
-  renderUI();
-  setSidebarVisible(true); // start with sidebar visible
-  setInterval(checkReminders,30000);
-  checkReminders();
   
-  // PWA service worker
+  // Sort menu
+  const menuBtn = document.getElementById("menuDotsBtn");
+  const sortMenu = document.getElementById("sortMenu");
+  menuBtn.addEventListener("click", (e) => { e.stopPropagation(); sortMenu.classList.toggle("show"); });
+  document.addEventListener("click", () => sortMenu.classList.remove("show"));
+  document.querySelectorAll("[data-sort]").forEach(el => {
+    el.addEventListener("click", (e) => { currentSort = el.getAttribute("data-sort"); renderUI(); sortMenu.classList.remove("show"); showToast(`Sorted by ${currentSort}`); });
+  });
+
+  loadData(); initDarkMode(); requestNotificationPermission(); renderUI(); setSidebarVisible(true);
+  setInterval(checkReminders,30000); checkReminders();
   if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(e=>console.log(e)));
 </script>
 </body>
