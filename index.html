@@ -247,14 +247,14 @@
       font-size: 18px;
     }
 
-    /* MAIN CONTENT */
+    /* MAIN CONTENT - with safe area bottom padding */
     .main-content {
       flex: 1;
       display: flex;
       flex-direction: column;
       overflow-y: auto;
       background: var(--bg-app);
-      padding: 28px 36px 20px 36px;
+      padding: 28px 36px calc(20px + env(safe-area-inset-bottom, 0px)) 36px;
       transition: all 0.2s;
       position: relative;
     }
@@ -315,7 +315,7 @@
       margin-bottom: 24px;
     }
 
-    /* ADD TASK PANE (bottom) */
+    /* ADD TASK PANE (bottom) - safe area aware */
     .add-task-pane {
       background: var(--card-bg);
       border: 1px solid var(--input-border);
@@ -329,6 +329,7 @@
       bottom: 0;
       background: var(--bg-app);
       backdrop-filter: blur(4px);
+      margin-bottom: 0;
     }
     .add-task-pane input {
       flex: 1;
@@ -485,6 +486,7 @@
       opacity: 0;
       transition: 0.2s;
       pointer-events: none;
+      margin-bottom: env(safe-area-inset-bottom, 0px);
     }
     /* sort dropdown */
     .sort-menu {
@@ -512,9 +514,14 @@
       background: var(--nav-hover);
     }
     @media (max-width: 680px) {
-      .main-content { padding: 20px; }
+      .main-content {
+        padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px)) 20px;
+      }
       .sidebar { width: 260px; }
       .sort-menu { right: 20px; top: 65px; }
+      .toast-msg {
+        bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      }
     }
   </style>
 </head>
@@ -627,7 +634,6 @@
       ];
       saveData();
     }
-    // ensure each task has createdAt
     tasks.forEach(t => { if(!t.createdAt) t.createdAt = Date.now(); });
     saveData();
   }
