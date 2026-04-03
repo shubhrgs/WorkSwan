@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#ffffff">
-  <meta name="description" content="Microsoft To Do clone - tasks, custom reminders, lists, minimalistic design">
+  <meta name="theme-color" content="#ffffff" id="themeColorMeta">
+  <meta name="description" content="Microsoft To Do clone - dark mode, recurrence, collapsible sidebar, custom reminders">
   <link rel="manifest" href="manifest.json">
-  <title>Microsoft To Do · PWA</title>
-  <!-- Font Awesome 6 (free icons) -->
+  <title>WorkSwan</title>
+  <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <!-- Google Fonts: Inter (minimalist) -->
+  <!-- Google Fonts: Inter -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
   <style>
     * {
@@ -18,41 +18,129 @@
       box-sizing: border-box;
     }
 
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif;
-      background: #f5f5f5;
-      color: #1e1e2f;
-      height: 100vh;
-      overflow: hidden;
+    /* Light mode (default) */
+    :root {
+      --bg-app: #ffffff;
+      --sidebar-bg: #fafafa;
+      --sidebar-border: #eaeef2;
+      --text-primary: #1e1e2f;
+      --text-secondary: #3b3a39;
+      --text-muted: #797979;
+      --card-bg: #ffffff;
+      --card-border: #edf0f3;
+      --card-hover-border: #d2dce6;
+      --nav-hover: #f0f2f5;
+      --nav-active-bg: #e9edf2;
+      --nav-active-color: #2d7aff;
+      --input-border: #e1e5ea;
+      --badge-bg: #f0f2f5;
+      --icon-color: #7a7a7a;
+      --delete-btn-hover: #f0f0f0;
+      --modal-bg: white;
+      --toast-bg: #1f1f1f;
+      --toast-text: white;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.02);
     }
 
-    /* App container */
+    body.dark {
+      --bg-app: #1e1e2e;
+      --sidebar-bg: #252526;
+      --sidebar-border: #3a3a3f;
+      --text-primary: #e4e4e7;
+      --text-secondary: #cdcdd4;
+      --text-muted: #a1a1aa;
+      --card-bg: #2d2d30;
+      --card-border: #3e3e42;
+      --card-hover-border: #5a5a60;
+      --nav-hover: #333338;
+      --nav-active-bg: #2d7aff30;
+      --nav-active-color: #6ea8fe;
+      --input-border: #3e3e42;
+      --badge-bg: #3a3a40;
+      --icon-color: #b0b0b8;
+      --delete-btn-hover: #3a3a40;
+      --modal-bg: #2d2d30;
+      --toast-bg: #e4e4e7;
+      --toast-text: #1e1e2e;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-app);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+      transition: background 0.2s, color 0.2s;
+    }
+
     .app {
       display: flex;
       height: 100vh;
       width: 100%;
-      background: #fff;
-      box-shadow: 0 0 20px rgba(0,0,0,0.02);
+      background: var(--bg-app);
     }
 
-    /* ========= SIDEBAR (Microsoft style) ========= */
+    /* ========= SIDEBAR (collapsible) ========= */
     .sidebar {
       width: 280px;
-      background: #fafafa;
-      border-right: 1px solid #eaeef2;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--sidebar-border);
       display: flex;
       flex-direction: column;
       padding: 28px 16px 20px 20px;
       overflow-y: auto;
       flex-shrink: 0;
+      transition: width 0.25s ease, padding 0.2s;
+    }
+    .sidebar.collapsed {
+      width: 80px;
+      padding: 28px 8px 20px 8px;
+    }
+    .sidebar.collapsed .logo-area h2,
+    .sidebar.collapsed .nav-item span,
+    .sidebar.collapsed .list-header span,
+    .sidebar.collapsed .custom-list-item span span,
+    .sidebar.collapsed .delete-list {
+      display: none;
+    }
+    .sidebar.collapsed .nav-item i,
+    .sidebar.collapsed .custom-list-item span i {
+      margin: 0 auto;
+    }
+    .sidebar.collapsed .nav-item {
+      justify-content: center;
+      padding: 10px 0;
+    }
+    .sidebar.collapsed .custom-list-item {
+      justify-content: center;
+      padding: 10px 0;
+    }
+    .sidebar.collapsed .add-list-btn {
+      display: none;
     }
 
+    /* toggle button for sidebar */
+    .collapse-toggle {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: var(--icon-color);
+      margin-left: auto;
+      margin-right: 8px;
+    }
     .logo-area {
       display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: space-between;
       margin-bottom: 32px;
       padding-left: 8px;
+    }
+    .logo-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
     .logo-area i {
       font-size: 28px;
@@ -61,13 +149,9 @@
     .logo-area h2 {
       font-size: 20px;
       font-weight: 600;
-      letter-spacing: -0.2px;
-      color: #201f1e;
+      color: var(--text-secondary);
     }
 
-    .nav-group {
-      margin-bottom: 28px;
-    }
     .nav-item {
       display: flex;
       align-items: center;
@@ -76,26 +160,25 @@
       border-radius: 10px;
       font-weight: 500;
       font-size: 15px;
-      color: #3b3a39;
+      color: var(--text-secondary);
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.2s;
       margin-bottom: 4px;
     }
     .nav-item i {
       width: 22px;
       font-size: 18px;
-      color: #7a7a7a;
+      color: var(--icon-color);
     }
     .nav-item.active {
-      background: #e9edf2;
-      color: #2d7aff;
-      font-weight: 500;
+      background: var(--nav-active-bg);
+      color: var(--nav-active-color);
     }
     .nav-item.active i {
-      color: #2d7aff;
+      color: var(--nav-active-color);
     }
     .nav-item:hover:not(.active) {
-      background: #f0f2f5;
+      background: var(--nav-hover);
     }
 
     .list-header {
@@ -106,23 +189,15 @@
       font-size: 13px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #8a8a8e;
+      color: var(--text-muted);
     }
     .add-list-btn {
       background: none;
       border: none;
       cursor: pointer;
-      color: #6c6e7a;
-      font-size: 14px;
+      color: var(--icon-color);
       border-radius: 6px;
       padding: 4px 6px;
-    }
-    .add-list-btn:hover {
-      background: #e9ecef;
-    }
-    .custom-list-container {
-      margin-top: 4px;
     }
     .custom-list-item {
       display: flex;
@@ -131,7 +206,6 @@
       padding: 10px 12px;
       border-radius: 10px;
       cursor: pointer;
-      transition: 0.1s;
     }
     .custom-list-item span {
       display: flex;
@@ -144,7 +218,7 @@
       opacity: 0;
       background: none;
       border: none;
-      color: #a0a0a0;
+      color: var(--icon-color);
       cursor: pointer;
       font-size: 14px;
       border-radius: 6px;
@@ -154,45 +228,54 @@
       opacity: 1;
     }
     .delete-list:hover {
-      background: #f0f0f0;
+      background: var(--delete-btn-hover);
       color: #d13438;
     }
 
-    /* ========= MAIN CONTENT ========= */
+    /* Dark mode toggle button (top right) */
+    .theme-toggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 40px;
+      padding: 12px;
+      cursor: pointer;
+      z-index: 200;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      color: var(--text-primary);
+      font-size: 20px;
+    }
+
+    /* MAIN CONTENT */
     .main-content {
       flex: 1;
       display: flex;
       flex-direction: column;
       overflow-y: auto;
-      background: #ffffff;
+      background: var(--bg-app);
       padding: 28px 36px 40px 36px;
-    }
-    .view-header {
-      margin-bottom: 28px;
     }
     .view-header h1 {
       font-size: 28px;
       font-weight: 600;
-      color: #252423;
+      color: var(--text-primary);
     }
     .task-count {
       font-size: 14px;
-      color: #797979;
+      color: var(--text-muted);
       margin-top: 6px;
     }
-
-    /* Add task row */
     .add-task-row {
-      background: #ffffff;
-      border: 1px solid #e1e5ea;
+      background: var(--card-bg);
+      border: 1px solid var(--input-border);
       border-radius: 14px;
       padding: 12px 16px;
       display: flex;
       align-items: center;
       gap: 12px;
       margin-bottom: 28px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-      transition: 0.2s;
     }
     .add-task-row input {
       flex: 1;
@@ -200,8 +283,8 @@
       font-size: 15px;
       padding: 8px 0;
       outline: none;
-      font-family: 'Inter', sans-serif;
       background: transparent;
+      color: var(--text-primary);
     }
     .add-task-row button {
       background: #2d7aff;
@@ -211,64 +294,47 @@
       padding: 8px 18px;
       font-weight: 500;
       cursor: pointer;
-      font-size: 13px;
-      transition: 0.2s;
     }
-    .add-task-row button:hover {
-      background: #1e66e0;
-    }
-
-    /* Tasks list */
     .tasks-container {
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
     .task-card {
-      background: #ffffff;
-      border: 1px solid #edf0f3;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: 16px;
       padding: 14px 18px;
       display: flex;
       align-items: center;
       gap: 14px;
-      transition: all 0.15s;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-    }
-    .task-card:hover {
-      background: #fefefe;
-      border-color: #d2dce6;
     }
     .task-check {
       transform: scale(1.2);
       cursor: pointer;
       accent-color: #2d7aff;
     }
-    .task-info {
-      flex: 1;
-    }
     .task-title {
       font-size: 15px;
       font-weight: 500;
       margin-bottom: 6px;
       display: flex;
-      align-items: center;
       flex-wrap: wrap;
       gap: 8px;
     }
     .completed-task .task-title {
       text-decoration: line-through;
-      color: #8f8f8f;
+      color: var(--text-muted);
     }
     .task-meta {
       display: flex;
       gap: 12px;
       font-size: 12px;
-      color: #6f6f76;
+      color: var(--text-muted);
       flex-wrap: wrap;
     }
     .badge {
-      background: #f0f2f5;
+      background: var(--badge-bg);
       border-radius: 30px;
       padding: 4px 10px;
       font-size: 11px;
@@ -277,40 +343,26 @@
       align-items: center;
       gap: 6px;
     }
-    .badge i {
-      font-size: 11px;
-    }
     .important-star {
       color: #ffb443;
       cursor: pointer;
-      font-size: 16px;
-    }
-    .task-actions {
-      display: flex;
-      gap: 12px;
-      color: #9a9aa5;
     }
     .task-actions i {
       cursor: pointer;
-      font-size: 16px;
-      transition: 0.1s;
-    }
-    .task-actions i:hover {
-      color: #2d7aff;
+      margin-left: 12px;
+      color: var(--icon-color);
     }
     .empty-state {
       text-align: center;
       padding: 48px 20px;
-      color: #aaa;
-      font-size: 15px;
+      color: var(--text-muted);
     }
 
-    /* MODAL (custom reminder / edit) */
+    /* MODAL */
     .modal-overlay {
       position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.4);
+      top:0;left:0;width:100%;height:100%;
+      background: rgba(0,0,0,0.5);
       backdrop-filter: blur(2px);
       display: flex;
       align-items: center;
@@ -325,50 +377,48 @@
       opacity: 1;
     }
     .modal-card {
-      background: white;
+      background: var(--modal-bg);
       width: 90%;
-      max-width: 480px;
+      max-width: 520px;
       border-radius: 28px;
       padding: 28px 26px;
-      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      color: var(--text-primary);
     }
-    .modal-card h3 {
-      font-size: 22px;
-      font-weight: 600;
-      margin-bottom: 18px;
-    }
-    .modal-card input, .modal-card select, .modal-card textarea {
+    .modal-card input, .modal-card select {
       width: 100%;
       padding: 12px 14px;
-      margin-bottom: 18px;
-      border: 1px solid #ddd;
+      margin-bottom: 16px;
+      border: 1px solid var(--input-border);
       border-radius: 14px;
-      font-family: inherit;
-      font-size: 14px;
+      background: var(--card-bg);
+      color: var(--text-primary);
+    }
+    .recurrence-group {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .recurrence-group input, .recurrence-group select {
+      width: auto;
+      margin-bottom: 0;
+      flex: 1;
     }
     .modal-buttons {
       display: flex;
       justify-content: flex-end;
       gap: 12px;
+      margin-top: 8px;
     }
-    .modal-buttons button {
-      padding: 8px 20px;
-      border-radius: 40px;
-      border: none;
-      cursor: pointer;
-      font-weight: 500;
-    }
-    .btn-primary {
-      background: #2d7aff;
-      color: white;
-    }
+    .btn-primary { background: #2d7aff; color: white; border: none; padding: 8px 20px; border-radius: 40px; cursor: pointer; }
     .toast-msg {
       position: fixed;
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
-      background: #1f1f1f;
-      color: white;
+      background: var(--toast-bg);
+      color: var(--toast-text);
       padding: 12px 24px;
       border-radius: 60px;
       font-size: 14px;
@@ -378,18 +428,21 @@
       pointer-events: none;
     }
     @media (max-width: 680px) {
-      .sidebar { width: 240px; }
       .main-content { padding: 20px; }
+      .sidebar:not(.collapsed) { width: 240px; }
+      .theme-toggle { bottom: 16px; right: 16px; }
     }
   </style>
 </head>
 <body>
 <div class="app">
-  <!-- Sidebar navigation -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="logo-area">
-      <i class="fas fa-check-circle"></i>
-      <h2>To Do</h2>
+      <div class="logo-left">
+        <i class="fas fa-check-circle"></i>
+        <h2>To Do</h2>
+      </div>
+      <button class="collapse-toggle" id="collapseSidebarBtn"><i class="fas fa-chevron-left"></i></button>
     </div>
     <div class="nav-group">
       <div class="nav-item" data-view="all"><i class="fas fa-inbox"></i><span>All Tasks</span></div>
@@ -416,16 +469,29 @@
     <div class="tasks-container" id="tasksContainer"></div>
   </div>
 </div>
+<div class="theme-toggle" id="darkModeToggle"><i class="fas fa-moon"></i></div>
+
 <div id="modalOverlay" class="modal-overlay">
   <div class="modal-card">
     <h3 id="modalTitle">Edit task</h3>
     <input type="text" id="taskTitleInput" placeholder="Task title">
-    <label style="font-size:13px; margin-bottom:6px; display:block">Due date</label>
+    <label>Due date</label>
     <input type="datetime-local" id="dueDateInput">
-    <label style="font-size:13px; margin-bottom:6px; display:block">Custom reminder (alert)</label>
+    <label>Custom reminder</label>
     <input type="datetime-local" id="reminderTimeInput">
-    <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px">
       <input type="checkbox" id="importantCheckbox"> <label>Mark as Important</label>
+    </div>
+    <label>Repeat</label>
+    <div class="recurrence-group">
+      <input type="number" id="repeatInterval" min="1" max="99" value="1" style="width:70px">
+      <select id="repeatPeriod">
+        <option value="none">Never</option>
+        <option value="day">Day(s)</option>
+        <option value="week">Week(s)</option>
+        <option value="month">Month(s)</option>
+        <option value="year">Year(s)</option>
+      </select>
     </div>
     <div class="modal-buttons">
       <button id="modalCancelBtn">Cancel</button>
@@ -436,53 +502,84 @@
 <div id="toastMsg" class="toast-msg"></div>
 
 <script>
-  // ---------- DATA MODEL ----------
+  // ---------- DATA ----------
   let tasks = [];
   let lists = [{ id: "default_inbox", name: "Inbox" }];
-  let currentView = { type: "smart", value: "all" };  // all, important, planned, or list: { type: "list", id }
-  
-  // helper: load/save
-  function saveData() {
-    localStorage.setItem("todo_clone_data", JSON.stringify({ tasks, lists }));
-  }
+  let currentView = { type: "smart", value: "all" };
+  let editingTaskId = null;
+
+  function saveData() { localStorage.setItem("todo_clone_data", JSON.stringify({ tasks, lists })); }
   function loadData() {
     const raw = localStorage.getItem("todo_clone_data");
     if (raw) {
-      try {
-        const data = JSON.parse(raw);
-        tasks = data.tasks || [];
-        lists = data.lists || [{ id: "default_inbox", name: "Inbox" }];
-        if (!lists.some(l => l.id === "default_inbox")) lists.unshift({ id: "default_inbox", name: "Inbox" });
-      } catch(e) { console.warn(e); }
+      try { const data = JSON.parse(raw); tasks = data.tasks || []; lists = data.lists || []; } catch(e) {}
     }
+    if (!lists.some(l => l.id === "default_inbox")) lists.unshift({ id: "default_inbox", name: "Inbox" });
     if (!tasks.length) {
-      // demo tasks with reminders
       const now = new Date();
-      const tomorrow = new Date(now);
-      tomorrow.setDate(now.getDate() + 1);
+      const tomorrow = new Date(now); tomorrow.setDate(now.getDate()+1);
       tasks = [
-        { id: "1", title: "Review project proposal", completed: false, important: true, dueDate: tomorrow.toISOString(), reminderTime: null, notified: false, listId: "default_inbox" },
-        { id: "2", title: "Buy groceries", completed: false, important: false, dueDate: null, reminderTime: new Date(now.getTime() + 3600000).toISOString(), notified: false, listId: "default_inbox" },
-        { id: "3", title: "Call dentist", completed: true, important: false, dueDate: null, reminderTime: null, notified: false, listId: "default_inbox" }
+        { id: "1", title: "Review project", completed: false, important: true, dueDate: tomorrow.toISOString(), reminderTime: null, notified: false, listId: "default_inbox", recurrence: null },
+        { id: "2", title: "Buy groceries", completed: false, important: false, dueDate: null, reminderTime: new Date(now.getTime()+3600000).toISOString(), notified: false, listId: "default_inbox", recurrence: null }
       ];
       saveData();
     }
   }
-  
-  // get filtered tasks based on view
+
+  // Recurrence helpers
+  function computeNextDate(fromDate, recurrence) {
+    if (!recurrence || recurrence.period === "none") return null;
+    let date = new Date(fromDate);
+    if (isNaN(date.getTime())) date = new Date();
+    const interval = recurrence.interval || 1;
+    switch(recurrence.period) {
+      case 'day': date.setDate(date.getDate() + interval); break;
+      case 'week': date.setDate(date.getDate() + (interval * 7)); break;
+      case 'month': date.setMonth(date.getMonth() + interval); break;
+      case 'year': date.setFullYear(date.getFullYear() + interval); break;
+      default: return null;
+    }
+    return date;
+  }
+
+  function createRecurringCopy(originalTask) {
+    if (!originalTask.recurrence || originalTask.recurrence.period === "none") return null;
+    let newDue = null, newReminder = null;
+    if (originalTask.dueDate) {
+      newDue = computeNextDate(originalTask.dueDate, originalTask.recurrence);
+      if (newDue) newDue = newDue.toISOString();
+    }
+    if (originalTask.reminderTime) {
+      newReminder = computeNextDate(originalTask.reminderTime, originalTask.recurrence);
+      if (newReminder) newReminder = newReminder.toISOString();
+    }
+    const newTask = {
+      id: Date.now() + "-" + Math.random().toString(36),
+      title: originalTask.title,
+      completed: false,
+      important: originalTask.important,
+      dueDate: newDue,
+      reminderTime: newReminder,
+      notified: false,
+      listId: originalTask.listId,
+      recurrence: { ...originalTask.recurrence }
+    };
+    return newTask;
+  }
+
+  // get filtered tasks
   function getFilteredTasks() {
     let filtered = [...tasks];
     if (currentView.type === "smart") {
-      if (currentView.value === "important") filtered = filtered.filter(t => t.important === true);
-      else if (currentView.value === "planned") filtered = filtered.filter(t => t.dueDate !== null && t.dueDate !== "");
-      else if (currentView.value === "all") filtered = filtered;
+      if (currentView.value === "important") filtered = filtered.filter(t => t.important);
+      else if (currentView.value === "planned") filtered = filtered.filter(t => t.dueDate);
+      else filtered = filtered;
     } else if (currentView.type === "list") {
       filtered = filtered.filter(t => t.listId === currentView.id);
     }
     return filtered.sort((a,b) => (a.completed === b.completed) ? 0 : a.completed ? 1 : -1);
   }
-  
-  // render sidebar lists
+
   function renderSidebar() {
     const container = document.getElementById("customListsContainer");
     container.innerHTML = "";
@@ -490,70 +587,46 @@
       if (list.id === "default_inbox") return;
       const div = document.createElement("div");
       div.className = "custom-list-item";
-      const isActive = (currentView.type === "list" && currentView.id === list.id);
-      if (isActive) div.style.background = "#e9edf2";
-      div.innerHTML = `
-        <span><i class="fas fa-list-ul"></i> ${escapeHtml(list.name)}</span>
-        <button class="delete-list" data-id="${list.id}"><i class="fas fa-trash-alt"></i></button>
-      `;
-      div.addEventListener("click", (e) => {
-        if (e.target.closest(".delete-list")) return;
-        currentView = { type: "list", id: list.id };
-        renderUI();
-      });
-      const delBtn = div.querySelector(".delete-list");
-      delBtn.addEventListener("click", (e) => {
+      if (currentView.type === "list" && currentView.id === list.id) div.style.background = "var(--nav-active-bg)";
+      div.innerHTML = `<span><i class="fas fa-list-ul"></i> ${escapeHtml(list.name)}</span>
+        <button class="delete-list" data-id="${list.id}"><i class="fas fa-trash-alt"></i></button>`;
+      div.addEventListener("click", (e) => { if(!e.target.closest(".delete-list")) { currentView = { type: "list", id: list.id }; renderUI(); } });
+      div.querySelector(".delete-list").addEventListener("click", (e) => {
         e.stopPropagation();
-        if (list.id === "default_inbox") return;
-        const confirmDel = confirm(`Delete list "${list.name}"? Tasks will be moved to Inbox.`);
-        if (confirmDel) {
+        if(confirm(`Delete "${list.name}"? Tasks move to Inbox`)) {
           tasks = tasks.map(t => t.listId === list.id ? { ...t, listId: "default_inbox" } : t);
           lists = lists.filter(l => l.id !== list.id);
-          if (currentView.type === "list" && currentView.id === list.id) currentView = { type: "smart", value: "all" };
-          saveData();
-          renderUI();
-          showToast(`"${list.name}" deleted`);
+          if(currentView.type==="list" && currentView.id===list.id) currentView = { type: "smart", value: "all" };
+          saveData(); renderUI(); showToast(`"${list.name}" deleted`);
         }
       });
       container.appendChild(div);
     });
-    // highlight active smart views
     document.querySelectorAll(".nav-item").forEach(el => {
       const view = el.getAttribute("data-view");
       if (currentView.type === "smart" && currentView.value === view) el.classList.add("active");
       else el.classList.remove("active");
     });
-    // additional highlight for custom lists
-    if (currentView.type === "list") {
-      const activeListId = currentView.id;
-      document.querySelectorAll(".custom-list-item").forEach(item => {
-        const btn = item.querySelector(".delete-list");
-        if (btn && btn.getAttribute("data-id") === activeListId) item.style.background = "#e9edf2";
-        else item.style.background = "";
-      });
-    }
   }
-  
+
   function renderTasks() {
     const container = document.getElementById("tasksContainer");
     const filtered = getFilteredTasks();
-    const countUncompleted = filtered.filter(t => !t.completed).length;
-    document.getElementById("taskCount").innerText = `${filtered.length} task${filtered.length !== 1 ? 's' : ''} · ${countUncompleted} remaining`;
-    if (filtered.length === 0) {
-      container.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle" style="font-size:32px; opacity:0.4"></i><p>No tasks yet. Add one above ✨</p></div>`;
-      return;
-    }
+    const remaining = filtered.filter(t => !t.completed).length;
+    document.getElementById("taskCount").innerText = `${filtered.length} task${filtered.length!==1?'s':''} · ${remaining} remaining`;
+    if(filtered.length===0) { container.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle" style="font-size:32px; opacity:0.4"></i><p>No tasks. Add one ✨</p></div>`; return; }
     container.innerHTML = filtered.map(task => `
       <div class="task-card ${task.completed ? 'completed-task' : ''}" data-id="${task.id}">
         <input type="checkbox" class="task-check" ${task.completed ? 'checked' : ''} data-id="${task.id}">
         <div class="task-info">
           <div class="task-title">
             <span>${escapeHtml(task.title)}</span>
-            ${task.important ? '<i class="fas fa-star important-star" style="color:#ffb443" data-id="'+task.id+'"></i>' : '<i class="far fa-star important-star" data-id="'+task.id+'"></i>'}
+            ${task.important ? '<i class="fas fa-star important-star" data-id="'+task.id+'"></i>' : '<i class="far fa-star important-star" data-id="'+task.id+'"></i>'}
+            ${task.recurrence && task.recurrence.period !== 'none' ? `<span class="badge"><i class="fas fa-sync-alt"></i> ${task.recurrence.period}${task.recurrence.interval>1 ? ` ${task.recurrence.interval}` : ''}</span>` : ''}
           </div>
           <div class="task-meta">
-            ${task.dueDate ? `<span class="badge"><i class="far fa-calendar-alt"></i> ${formatDueDate(task.dueDate)}</span>` : ''}
-            ${task.reminderTime ? `<span class="badge"><i class="far fa-bell"></i> ${formatReminder(task.reminderTime)}</span>` : ''}
+            ${task.dueDate ? `<span class="badge"><i class="far fa-calendar-alt"></i> ${formatDate(task.dueDate)}</span>` : ''}
+            ${task.reminderTime ? `<span class="badge"><i class="far fa-bell"></i> ${formatDateTime(task.reminderTime)}</span>` : ''}
           </div>
         </div>
         <div class="task-actions">
@@ -562,229 +635,113 @@
         </div>
       </div>
     `).join('');
-    // attach events dynamically
-    document.querySelectorAll('.task-check').forEach(cb => {
-      cb.addEventListener('change', (e) => {
-        const tid = cb.getAttribute('data-id');
-        const task = tasks.find(t => t.id === tid);
-        if (task) { task.completed = cb.checked; saveData(); renderUI(); }
-      });
-    });
-    document.querySelectorAll('.important-star').forEach(star => {
-      star.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const tid = star.getAttribute('data-id');
-        const task = tasks.find(t => t.id === tid);
-        if (task) { task.important = !task.important; saveData(); renderUI(); showToast(task.important ? 'Marked important' : 'Removed important'); }
-      });
-    });
-    document.querySelectorAll('[data-action="edit"]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const tid = btn.getAttribute('data-id');
-        openEditModal(tid);
-      });
-    });
-    document.querySelectorAll('[data-action="delete"]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const tid = btn.getAttribute('data-id');
-        if (confirm('Delete this task?')) {
-          tasks = tasks.filter(t => t.id !== tid);
-          saveData();
-          renderUI();
-          showToast('Task deleted');
-        }
-      });
-    });
+    // events
+    document.querySelectorAll('.task-check').forEach(cb => cb.addEventListener('change', (e) => handleTaskComplete(cb.getAttribute('data-id'), cb.checked)));
+    document.querySelectorAll('.important-star').forEach(star => star.addEventListener('click', (e) => { let tid=star.getAttribute('data-id'); let t=tasks.find(x=>x.id===tid); if(t){t.important=!t.important; saveData(); renderUI(); showToast(t.important?'Marked important':'Removed important');}}));
+    document.querySelectorAll('[data-action="edit"]').forEach(btn => btn.addEventListener('click', (e) => openEditModal(btn.getAttribute('data-id'))));
+    document.querySelectorAll('[data-action="delete"]').forEach(btn => btn.addEventListener('click', (e) => { if(confirm('Delete task?')){ tasks=tasks.filter(t=>t.id!==btn.getAttribute('data-id')); saveData(); renderUI(); showToast('Deleted');}}));
   }
-  
-  function formatDueDate(iso) {
-    if (!iso) return '';
-    const date = new Date(iso);
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const target = new Date(date);
-    target.setHours(0,0,0,0);
-    const diff = (target - today) / (86400000);
-    if (diff === 0) return 'Today';
-    if (diff === 1) return 'Tomorrow';
-    if (diff > 1 && diff < 7) return `${target.toLocaleDateString(undefined, {weekday:'short'})}`;
-    return target.toLocaleDateString();
-  }
-  function formatReminder(iso) {
-    if (!iso) return '';
-    const d = new Date(iso);
-    return d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-  }
-  
-  let editingTaskId = null;
-  function openEditModal(taskId) {
+
+  function handleTaskComplete(taskId, isChecked) {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
+    if (isChecked && !task.completed) {
+      // completing a task: if recurrence exists, spawn next instance
+      if (task.recurrence && task.recurrence.period !== 'none') {
+        const nextTask = createRecurringCopy(task);
+        if (nextTask) {
+          tasks.push(nextTask);
+          showToast(`Next recurrence created: ${nextTask.title}`);
+        }
+        // remove recurrence from completed task so it doesn't spawn again
+        task.recurrence = null;
+      }
+      task.completed = true;
+    } else if (!isChecked && task.completed) {
+      task.completed = false;
+    }
+    saveData();
+    renderUI();
+  }
+
+  function openEditModal(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if(!task) return;
     editingTaskId = taskId;
     document.getElementById("taskTitleInput").value = task.title;
     document.getElementById("dueDateInput").value = task.dueDate ? task.dueDate.slice(0,16) : '';
     document.getElementById("reminderTimeInput").value = task.reminderTime ? task.reminderTime.slice(0,16) : '';
     document.getElementById("importantCheckbox").checked = task.important;
-    document.getElementById("modalTitle").innerText = "Edit task";
+    let interval = 1, period = "none";
+    if(task.recurrence) { interval = task.recurrence.interval || 1; period = task.recurrence.period; }
+    document.getElementById("repeatInterval").value = interval;
+    document.getElementById("repeatPeriod").value = period;
     document.getElementById("modalOverlay").classList.add("active");
   }
-  
-  function closeModal() { document.getElementById("modalOverlay").classList.remove("active"); editingTaskId = null; }
-  
+  function closeModal() { document.getElementById("modalOverlay").classList.remove("active"); editingTaskId=null; }
   function saveModal() {
-    if (!editingTaskId) return;
+    if(!editingTaskId) return;
     const newTitle = document.getElementById("taskTitleInput").value.trim();
-    if (!newTitle) { showToast("Title required"); return; }
-    const due = document.getElementById("dueDateInput").value;
-    const reminder = document.getElementById("reminderTimeInput").value;
-    const important = document.getElementById("importantCheckbox").checked;
+    if(!newTitle) { showToast("Title required"); return; }
     const task = tasks.find(t => t.id === editingTaskId);
-    if (task) {
+    if(task) {
       task.title = newTitle;
-      task.dueDate = due ? new Date(due).toISOString() : null;
-      task.reminderTime = reminder ? new Date(reminder).toISOString() : null;
-      task.important = important;
-      task.notified = false; // reset notified flag on reminder change
+      task.dueDate = document.getElementById("dueDateInput").value ? new Date(document.getElementById("dueDateInput").value).toISOString() : null;
+      task.reminderTime = document.getElementById("reminderTimeInput").value ? new Date(document.getElementById("reminderTimeInput").value).toISOString() : null;
+      task.important = document.getElementById("importantCheckbox").checked;
+      const interval = parseInt(document.getElementById("repeatInterval").value,10);
+      const period = document.getElementById("repeatPeriod").value;
+      if(period !== "none") task.recurrence = { interval: interval || 1, period: period };
+      else task.recurrence = null;
       saveData();
       renderUI();
       showToast("Task updated");
     }
     closeModal();
   }
-  
-  function addTask(title, listId = null) {
-    if (!title.trim()) return false;
-    let targetList = listId;
-    if (!targetList) {
-      if (currentView.type === "list") targetList = currentView.id;
-      else targetList = "default_inbox";
-    }
+
+  function addTask(title, listId=null) {
+    if(!title.trim()) return false;
+    let target = listId || (currentView.type==="list" ? currentView.id : "default_inbox");
     const newTask = {
-      id: Date.now() + "-" + Math.random().toString(36),
-      title: title.trim(),
-      completed: false,
-      important: false,
-      dueDate: null,
-      reminderTime: null,
-      notified: false,
-      listId: targetList
+      id: Date.now()+'-'+Math.random().toString(36),
+      title: title.trim(), completed: false, important: false, dueDate: null, reminderTime: null, notified: false, listId: target, recurrence: null
     };
     tasks.unshift(newTask);
-    saveData();
-    renderUI();
-    return true;
+    saveData(); renderUI(); return true;
   }
-  
-  // Notification + reminder engine
-  let reminderInterval = null;
-  function requestNotificationPermission() {
-    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-      Notification.requestPermission();
-    }
-  }
-  function checkReminders() {
-    if (!("Notification" in window)) return;
-    const now = new Date();
-    let anyAlert = false;
-    tasks.forEach(task => {
-      if (task.reminderTime && !task.notified && !task.completed) {
-        const reminderDate = new Date(task.reminderTime);
-        if (reminderDate <= now) {
-          task.notified = true;
-          anyAlert = true;
-          if (Notification.permission === "granted") {
-            new Notification("⏰ Reminder", { body: `"${task.title}" is due now!`, icon: "https://cdn-icons-png.flaticon.com/512/599/599519.png" });
-          } else {
-            showToast(`Reminder: ${task.title}`);
-          }
-          saveData();
-        }
-      }
-    });
-    if (anyAlert) renderUI();
-  }
-  
-  function showToast(msg) {
-    const toast = document.getElementById("toastMsg");
-    toast.innerText = msg;
-    toast.style.opacity = "1";
-    setTimeout(() => { toast.style.opacity = "0"; }, 2300);
-  }
-  
-  function renderUI() {
-    let title = "";
-    if (currentView.type === "smart") {
-      if (currentView.value === "all") title = "All Tasks";
-      else if (currentView.value === "important") title = "Important";
-      else if (currentView.value === "planned") title = "Planned";
-    } else if (currentView.type === "list") {
-      const found = lists.find(l => l.id === currentView.id);
-      title = found ? found.name : "Inbox";
-    }
-    document.getElementById("viewTitle").innerText = title;
-    renderSidebar();
-    renderTasks();
-  }
-  
-  function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m;}); }
-  
-  // Add custom list
-  function addCustomList() {
-    let name = prompt("List name:");
-    if (name && name.trim()) {
-      const id = "list_" + Date.now();
-      lists.push({ id, name: name.trim() });
-      saveData();
-      renderUI();
-      currentView = { type: "list", id };
-      renderUI();
-      showToast(`List "${name}" created`);
-    }
-  }
-  
+
+  function formatDate(iso) { if(!iso) return ''; const d=new Date(iso); const today=new Date(); today.setHours(0,0,0,0); const target=new Date(d); target.setHours(0,0,0,0); const diff=(target-today)/86400000; if(diff===0) return 'Today'; if(diff===1) return 'Tomorrow'; return target.toLocaleDateString(); }
+  function formatDateTime(iso) { if(!iso) return ''; return new Date(iso).toLocaleString(undefined, {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}); }
+  function showToast(msg) { const t=document.getElementById("toastMsg"); t.innerText=msg; t.style.opacity='1'; setTimeout(()=>t.style.opacity='0',2300); }
+  function renderUI() { let title=""; if(currentView.type==="smart") title=currentView.value==="all"?"All Tasks":currentView.value==="important"?"Important":"Planned"; else title=lists.find(l=>l.id===currentView.id)?.name||"Inbox"; document.getElementById("viewTitle").innerText=title; renderSidebar(); renderTasks(); }
+  function escapeHtml(str) { return str.replace(/[&<>]/g, m=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+
+  // Dark mode
+  function initDarkMode() { const saved=localStorage.getItem('darkMode'); if(saved==='true') document.body.classList.add('dark'); else document.body.classList.remove('dark'); }
+  function toggleDarkMode() { document.body.classList.toggle('dark'); localStorage.setItem('darkMode', document.body.classList.contains('dark')); const meta=document.getElementById('themeColorMeta'); if(meta) meta.setAttribute('content', document.body.classList.contains('dark')?'#1e1e2e':'#ffffff'); }
+  // Sidebar collapse
+  function initSidebarCollapse() { const collapsed=localStorage.getItem('sidebarCollapsed')==='true'; if(collapsed) document.getElementById('sidebar').classList.add('collapsed'); }
+  function toggleSidebar() { const sb=document.getElementById('sidebar'); sb.classList.toggle('collapsed'); localStorage.setItem('sidebarCollapsed', sb.classList.contains('collapsed')); }
+
+  // Reminders + notifications
+  function requestNotificationPermission() { if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); }
+  function checkReminders() { if(!("Notification" in window)) return; const now=new Date(); tasks.forEach(t=>{ if(t.reminderTime && !t.notified && !t.completed && new Date(t.reminderTime)<=now) { t.notified=true; if(Notification.permission==="granted") new Notification("⏰ Reminder",{body:`"${t.title}" is due!`}); else showToast(`Reminder: ${t.title}`); saveData(); renderUI(); } }); }
+
   // Event listeners
-  document.getElementById("addTaskBtn").addEventListener("click", () => {
-    const input = document.getElementById("newTaskInput");
-    if (input.value.trim()) {
-      addTask(input.value);
-      input.value = "";
-    } else showToast("Write a task name");
-  });
-  document.getElementById("newTaskInput").addEventListener("keypress", (e) => {
-    if (e.key === "Enter") document.getElementById("addTaskBtn").click();
-  });
-  document.querySelectorAll(".nav-item").forEach(el => {
-    el.addEventListener("click", () => {
-      const view = el.getAttribute("data-view");
-      if (view) currentView = { type: "smart", value: view };
-      renderUI();
-    });
-  });
-  document.getElementById("addListBtn").addEventListener("click", addCustomList);
-  document.getElementById("modalCancelBtn").addEventListener("click", closeModal);
-  document.getElementById("modalSaveBtn").addEventListener("click", saveModal);
-  document.getElementById("modalOverlay").addEventListener("click", (e) => { if(e.target === document.getElementById("modalOverlay")) closeModal(); });
-  
-  // Init & reminder polling
-  loadData();
-  requestNotificationPermission();
-  renderUI();
-  setInterval(() => checkReminders(), 30000);
-  checkReminders();
-  
-  // optional: request notification again after click
-  window.addEventListener("load", () => { if (Notification.permission === "default") Notification.requestPermission(); });
-  
-  // ---- PWA Service Worker Registration ----
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').then(reg => {
-        console.log('Service Worker registered', reg);
-      }).catch(err => {
-        console.log('SW registration failed', err);
-      });
-    });
-  }
+  document.getElementById("addTaskBtn").addEventListener("click",()=>{ const inp=document.getElementById("newTaskInput"); if(inp.value.trim()) addTask(inp.value); inp.value=""; });
+  document.getElementById("newTaskInput").addEventListener("keypress",e=>{if(e.key==="Enter") document.getElementById("addTaskBtn").click();});
+  document.querySelectorAll(".nav-item").forEach(el=>el.addEventListener("click",()=>{ const v=el.getAttribute("data-view"); if(v) currentView={type:"smart",value:v}; renderUI(); }));
+  document.getElementById("addListBtn").addEventListener("click",()=>{ let name=prompt("List name:"); if(name?.trim()){ const id="list_"+Date.now(); lists.push({id,name:name.trim()}); saveData(); renderUI(); currentView={type:"list",id}; renderUI(); showToast(`"${name}" created`); }});
+  document.getElementById("modalCancelBtn").addEventListener("click",closeModal);
+  document.getElementById("modalSaveBtn").addEventListener("click",saveModal);
+  document.getElementById("darkModeToggle").addEventListener("click",toggleDarkMode);
+  document.getElementById("collapseSidebarBtn").addEventListener("click",toggleSidebar);
+  document.getElementById("modalOverlay").addEventListener("click",e=>{if(e.target===document.getElementById("modalOverlay")) closeModal();});
+
+  loadData(); initDarkMode(); initSidebarCollapse(); requestNotificationPermission(); renderUI();
+  setInterval(checkReminders,30000); checkReminders();
+  if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(e=>console.log(e)));
 </script>
 </body>
 </html>
