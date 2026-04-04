@@ -36,7 +36,7 @@
       --badge-bg: #f0f2f5;
       --icon-color: #7a7a7a;
       --delete-btn-hover: #f0f0f0;
-      --modal-bg: #ffffff; /* Light mode modal background */
+      --modal-bg: #ffffff;
       --modal-text: #1e1e2f;
       --modal-border: #e1e5ea;
       --toast-bg: #1f1f1f;
@@ -48,7 +48,7 @@
       --star-filled: var(--accent-color);
       --completed-section-color: var(--accent-color);
       --overdue-color: var(--accent-color);
-      --myday-icon-color: #9a9a9a; /* Grey for monochrome design */
+      --myday-icon-color: #9a9a9a;
     }
 
     body.dark {
@@ -68,7 +68,7 @@
       --badge-bg: #1a1a1a;
       --icon-color: #999999;
       --delete-btn-hover: #1a1a1a;
-      --modal-bg: #000000; /* Dark mode modal background */
+      --modal-bg: #000000;
       --modal-text: #ffffff;
       --modal-border: #1a1a1a;
       --toast-bg: #e4e4e7;
@@ -108,7 +108,6 @@
       background: var(--overlay-bg);
       z-index: 5;
       display: none;
-      /* REMOVED backdrop-filter to fix blur issue */
     }
     body.sidebar-hidden .sidebar-overlay {
       display: none;
@@ -117,7 +116,6 @@
       body:not(.sidebar-hidden) .sidebar-overlay {
         display: block;
       }
-      /* Prevent main content stretch when sidebar is open on mobile */
       body:not(.sidebar-hidden) .main-content {
         transform: translateX(280px);
       }
@@ -160,6 +158,7 @@
       align-items: center;
       gap: 12px;
     }
+    /* Fix #2: Accent color tick icon */
     .logo-left i {
       font-size: 28px;
       color: var(--accent-color);
@@ -310,17 +309,32 @@
       position: relative;
     }
 
+    /* Fix #4: Back button as clickable text link */
     .back-nav {
       display: none;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
+      gap: 6px;
+      margin-bottom: 16px;
       cursor: pointer;
       width: fit-content;
-      padding: 6px 12px;
-      border-radius: 40px;
-      background: var(--nav-hover);
-      color: var(--text-secondary);
+      padding: 4px 0;
+      background: transparent;
+      color: var(--accent-color);
+      font-weight: 500;
+      font-size: 15px;
+      border-radius: 0;
+      transition: opacity 0.2s;
+    }
+    .back-nav i {
+      font-size: 14px;
+      transition: transform 0.15s;
+    }
+    .back-nav:hover {
+      opacity: 0.8;
+      text-decoration: underline;
+    }
+    .back-nav:hover i {
+      transform: translateX(-2px);
     }
     body.sidebar-hidden .back-nav {
       display: flex;
@@ -333,10 +347,11 @@
       flex-wrap: wrap;
       margin-bottom: 28px;
     }
+    /* Fix #3: List/task name in accent color */
     .view-header h1 {
       font-size: 28px;
       font-weight: 600;
-      color: var(--text-primary);
+      color: var(--accent-color);
       cursor: pointer;
       padding: 4px 8px;
       margin: -4px -8px;
@@ -542,14 +557,14 @@
       padding: 0 8px;
     }
 
-    /* TASK DETAIL MODAL - Theme-aware background */
+    /* TASK DETAIL MODAL */
     .detail-modal {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: var(--modal-bg); /* Now respects theme */
+      background: var(--modal-bg);
       color: var(--modal-text);
       z-index: 1000;
       overflow-y: auto;
@@ -560,6 +575,8 @@
     .detail-modal.active {
       display: flex;
     }
+    
+    /* Fix #5: Back button instead of X */
     .detail-header {
       display: flex;
       justify-content: space-between;
@@ -569,6 +586,32 @@
       border-bottom: 1px solid var(--modal-border);
       gap: 16px;
     }
+    .detail-back-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 4px 0;
+      background: transparent;
+      border: none;
+      color: var(--accent-color);
+      font-weight: 500;
+      font-size: 15px;
+      font-family: inherit;
+      flex-shrink: 0;
+      transition: opacity 0.2s;
+    }
+    .detail-back-btn i {
+      font-size: 14px;
+      transition: transform 0.15s;
+    }
+    .detail-back-btn:hover {
+      opacity: 0.8;
+    }
+    .detail-back-btn:hover i {
+      transform: translateX(-2px);
+    }
+
     .detail-header-content {
       display: flex;
       align-items: center;
@@ -580,6 +623,7 @@
       flex: 1;
       min-width: 0;
     }
+    /* Fix #3: Task name in detail view is accent color */
     .detail-title-input {
       font-size: 24px;
       font-weight: 600;
@@ -588,7 +632,7 @@
       border-bottom: 1px solid var(--modal-border);
       border-radius: 0;
       background: transparent;
-      color: var(--modal-text);
+      color: var(--accent-color);
       width: 100%;
       font-family: inherit;
     }
@@ -618,21 +662,6 @@
     .detail-complete-checkbox {
       transform: scale(1.3);
       cursor: pointer;
-    }
-    .close-detail {
-      background: none;
-      border: none;
-      font-size: 28px;
-      cursor: pointer;
-      color: var(--icon-color);
-      padding: 8px;
-      border-radius: 50%;
-      transition: background 0.2s;
-      flex-shrink: 0;
-      margin-left: 8px;
-    }
-    .close-detail:hover {
-      background: var(--nav-hover);
     }
     
     .detail-actions-list {
@@ -699,7 +728,7 @@
     }
     
     .detail-notes-section {
-      margin-bottom: 32px;
+      margin-bottom: 24px;
     }
     .detail-notes-label {
       display: block;
@@ -722,6 +751,23 @@
     }
     .detail-notes-input::placeholder {
       color: var(--text-muted);
+    }
+    /* Fix #1: Save notes button */
+    .save-notes-btn {
+      margin-top: 10px;
+      background: none;
+      border: none;
+      color: var(--accent-color);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 6px 0;
+      font-family: inherit;
+      transition: opacity 0.2s;
+    }
+    .save-notes-btn:hover {
+      opacity: 0.8;
+      text-decoration: underline;
     }
     
     .detail-delete-btn {
@@ -751,7 +797,7 @@
       transform: scale(0.95);
     }
 
-    /* Bottom popup sheets - Theme-aware */
+    /* Bottom popup sheets */
     .popup-sheet {
       position: fixed;
       bottom: 0;
@@ -946,12 +992,6 @@
       .popup-sheet {
         padding: 20px 16px;
       }
-      .detail-header {
-        gap: 12px;
-      }
-      .close-detail {
-        margin-left: 4px;
-      }
     }
   </style>
 </head>
@@ -967,7 +1007,6 @@
       <button class="close-sidebar-btn" id="closeSidebarBtn"><i class="fas fa-times"></i></button>
     </div>
     <div class="nav-group">
-      <!-- My Day with GREY sun SVG for monochrome design -->
       <div class="nav-item" data-view="myday">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--myday-icon-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="5"></circle>
@@ -1019,6 +1058,10 @@
 <!-- Task Detail Modal -->
 <div id="taskDetailModal" class="detail-modal">
   <div class="detail-header">
+    <!-- Fix #5: Back button instead of X -->
+    <button class="detail-back-btn" id="detailBackBtn">
+      <i class="fas fa-arrow-left"></i> <span>Back</span>
+    </button>
     <div class="detail-header-content">
       <div class="detail-title-box">
         <input type="text" id="detailTitle" class="detail-title-input" placeholder="Task title">
@@ -1028,7 +1071,6 @@
         <input type="checkbox" class="detail-complete-checkbox" id="detailCompleteCheckbox">
       </div>
     </div>
-    <button class="close-detail" id="closeDetailBtn"><i class="fas fa-times"></i></button>
   </div>
   
   <div class="detail-actions-list">
@@ -1070,6 +1112,8 @@
   <div class="detail-notes-section">
     <label class="detail-notes-label">Add notes</label>
     <textarea class="detail-notes-input" id="detailNotes" placeholder="Add details, links, or context..."></textarea>
+    <!-- Fix #1: Save notes button -->
+    <button class="save-notes-btn" id="saveNotesBtn">Save notes</button>
   </div>
   
   <button class="detail-delete-btn" id="detailDeleteBtn" title="Delete task">
@@ -1172,7 +1216,6 @@
       ];
       saveData();
     }
-    // FIX #3: Ensure ALL tasks have notes field initialized
     tasks.forEach(t => { 
       if(!t.createdAt) t.createdAt = Date.now();
       if(t.notes === undefined || t.notes === null) t.notes = "";
@@ -1465,7 +1508,6 @@
       document.getElementById("repeatValue").textContent = "Never";
     }
     
-    // FIX #3: Load notes properly
     document.getElementById("detailNotes").value = task.notes || "";
     
     modal.classList.add("active");
@@ -1474,6 +1516,17 @@
   function closeTaskDetail() {
     document.getElementById("taskDetailModal").classList.remove("active");
     currentDetailTaskId = null;
+  }
+
+  // FIX #1: Explicit save notes function
+  function saveNotesExplicit() {
+    if(!currentDetailTaskId) return;
+    const task = tasks.find(t => t.id === currentDetailTaskId);
+    if(task) {
+      task.notes = document.getElementById("detailNotes").value;
+      saveData();
+      showToast("Notes saved");
+    }
   }
 
   function saveCurrentTaskDetail() {
@@ -1485,7 +1538,6 @@
       task.title = newTitle;
       task.important = document.getElementById("detailImportantStar").classList.contains("filled");
       task.completed = document.getElementById("detailCompleteCheckbox").checked;
-      // FIX #3: Save notes properly
       task.notes = document.getElementById("detailNotes").value;
       saveData();
       renderUI();
@@ -1700,7 +1752,10 @@
   document.getElementById("closeSidebarBtn").addEventListener("click", () => setSidebarVisible(false));
   document.getElementById("backNavBtn").addEventListener("click", () => setSidebarVisible(true));
   document.getElementById("sidebarOverlay").addEventListener("click", () => setSidebarVisible(false));
-  document.getElementById("closeDetailBtn").addEventListener("click", closeTaskDetail);
+  
+  // Detail modal events
+  // FIX #5: Back button replaces X close button
+  document.getElementById("detailBackBtn").addEventListener("click", closeTaskDetail);
   document.getElementById("detailTitle").addEventListener("blur", saveCurrentTaskDetail);
   document.getElementById("detailImportantStar").addEventListener("click", () => {
     if(!currentDetailTaskId) return;
@@ -1730,13 +1785,23 @@
       else customSection.classList.remove("show");
     });
   });
+  // FIX #1: Save notes button event
+  document.getElementById("saveNotesBtn").addEventListener("click", saveNotesExplicit);
   document.getElementById("detailDeleteBtn").addEventListener("click", deleteCurrentTask);
+  
+  // Sort menu
   const menuBtn = document.getElementById("menuDotsBtn");
   const sortMenu = document.getElementById("sortMenu");
   menuBtn.addEventListener("click", (e) => { e.stopPropagation(); sortMenu.classList.toggle("show"); });
   document.addEventListener("click", () => sortMenu.classList.remove("show"));
   document.querySelectorAll("[data-sort]").forEach(el => {
-    el.addEventListener("click", (e) => { currentSort = el.getAttribute("data-sort"); renderUI(); sortMenu.classList.remove("show"); const sortLabels = { 'name': 'name', 'created': 'creation date', 'due': 'due date' }; showToast(`Sorted by ${sortLabels[currentSort] || currentSort}`); });
+    el.addEventListener("click", (e) => { 
+      currentSort = el.getAttribute("data-sort"); 
+      renderUI(); 
+      sortMenu.classList.remove("show"); 
+      const sortLabels = { 'name': 'name', 'created': 'creation date', 'due': 'due date' }; 
+      showToast(`Sorted by ${sortLabels[currentSort] || currentSort}`); 
+    });
   });
 
   // Initialize
