@@ -37,7 +37,6 @@
       --modal-bg: white;
       --toast-bg: #1f1f1f;
       --toast-text: white;
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.02);
       --overlay-bg: rgba(0,0,0,0.3);
     }
 
@@ -80,7 +79,6 @@
       position: relative;
     }
 
-    /* Overlay for mobile sidebar collapse */
     .sidebar-overlay {
       position: fixed;
       top: 0;
@@ -228,22 +226,6 @@
       cursor: pointer;
       flex: 1;
     }
-    .edit-list-icon {
-      opacity: 0;
-      background: none;
-      border: none;
-      color: var(--icon-color);
-      cursor: pointer;
-      font-size: 14px;
-      padding: 4px 8px;
-      border-radius: 8px;
-    }
-    .custom-list-item:hover .edit-list-icon {
-      opacity: 1;
-    }
-    .edit-list-icon:hover {
-      background: var(--nav-hover);
-    }
     .delete-list {
       opacity: 0;
       background: none;
@@ -322,6 +304,14 @@
       font-size: 28px;
       font-weight: 600;
       color: var(--text-primary);
+      cursor: pointer;
+      padding: 4px 8px;
+      margin: -4px -8px;
+      border-radius: 12px;
+      transition: background 0.1s;
+    }
+    .view-header h1:hover {
+      background: var(--nav-hover);
     }
     .menu-dots {
       background: none;
@@ -346,7 +336,7 @@
       margin-bottom: 24px;
     }
 
-    /* Minimal task card: checkbox + title + star */
+    /* Minimal task card */
     .task-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -387,7 +377,7 @@
       color: var(--text-muted);
     }
 
-    /* ADD TASK PANE (bottom) */
+    /* ADD TASK PANE (bottom) - single plus button on right */
     .add-task-pane {
       background: var(--card-bg);
       border: 1px solid var(--input-border);
@@ -411,7 +401,7 @@
       background: transparent;
       color: var(--text-primary);
     }
-    .add-task-pane button, .add-icon-btn {
+    .add-task-pane button {
       background: none;
       border: none;
       cursor: pointer;
@@ -419,16 +409,8 @@
       font-size: 20px;
       padding: 0 8px;
     }
-    .add-task-pane .add-text-btn {
-      background: #2d7aff;
-      color: white;
-      border-radius: 40px;
-      padding: 8px 20px;
-      font-size: 14px;
-      font-weight: 500;
-    }
 
-    /* TASK DETAIL MODAL (full page style) */
+    /* TASK DETAIL MODAL */
     .detail-modal {
       position: fixed;
       top: 0;
@@ -500,16 +482,30 @@
     .detail-checkbox label {
       font-size: 16px;
     }
+    .detail-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .save-task-btn {
+      background: #2d7aff;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 40px;
+      flex: 1;
+      font-weight: 500;
+      cursor: pointer;
+    }
     .delete-task-btn {
       background: none;
       border: 1px solid #d13438;
       color: #d13438;
       padding: 12px;
       border-radius: 40px;
-      width: 100%;
+      flex: 1;
       font-weight: 500;
       cursor: pointer;
-      margin-top: 20px;
     }
     .recurrence-group {
       display: flex;
@@ -600,14 +596,13 @@
     </div>
     <div class="tasks-container" id="tasksContainer"></div>
     <div class="add-task-pane">
-      <button class="add-icon-btn" id="addIconBtn"><i class="fas fa-plus-circle"></i></button>
       <input type="text" id="newTaskInput" placeholder="Add a task" autocomplete="off">
-      <button class="add-text-btn" id="addTaskBtn">Add</button>
+      <button id="addIconBtn"><i class="fas fa-plus-circle"></i></button>
     </div>
   </div>
 </div>
 
-<!-- Task Detail Modal (full page style) -->
+<!-- Task Detail Modal -->
 <div id="taskDetailModal" class="detail-modal">
   <div class="detail-header">
     <h2>Task details</h2>
@@ -640,7 +635,10 @@
       </select>
     </div>
   </div>
-  <button class="delete-task-btn" id="deleteTaskBtn">Delete task</button>
+  <div class="detail-buttons">
+    <button class="save-task-btn" id="saveTaskBtn">Save changes</button>
+    <button class="delete-task-btn" id="deleteTaskBtn">Delete task</button>
+  </div>
 </div>
 
 <!-- Sort dropdown -->
@@ -752,42 +750,19 @@
       if (currentView.type === "list" && currentView.id === list.id) div.style.background = "var(--nav-active-bg)";
       const nameSpan = document.createElement("span");
       nameSpan.innerHTML = `<i class="fas fa-list-ul"></i><span class="list-name-text" data-list-id="${list.id}">${escapeHtml(list.name)}</span>`;
-      const editBtn = document.createElement("button");
-      editBtn.className = "edit-list-icon";
-      editBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
       const delBtn = document.createElement("button");
       delBtn.className = "delete-list";
       delBtn.setAttribute("data-id", list.id);
       delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
       div.appendChild(nameSpan);
-      div.appendChild(editBtn);
       div.appendChild(delBtn);
       
-      // Open list page on name click
-      const nameText = nameSpan.querySelector('.list-name-text');
-      nameText.addEventListener('click', (e) => {
-        e.stopPropagation();
+      // Open list page on click anywhere (except delete)
+      div.addEventListener("click", (e) => {
+        if(e.target.closest(".delete-list")) return;
         currentView = { type: "list", id: list.id };
         renderUI();
         hideSidebarAndShowBack();
-      });
-      // Edit list name via pencil icon
-      editBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const newName = prompt("Edit list name:", list.name);
-        if(newName && newName.trim()) {
-          list.name = newName.trim();
-          saveData();
-          renderUI();
-          showToast(`List renamed to "${list.name}"`);
-        }
-      });
-      div.addEventListener("click", (e) => {
-        if(!e.target.closest(".delete-list") && !e.target.closest('.edit-list-icon') && e.target !== nameText) {
-          currentView = { type: "list", id: list.id };
-          renderUI();
-          hideSidebarAndShowBack();
-        }
       });
       delBtn.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -868,7 +843,7 @@
     currentDetailTaskId = null;
   }
 
-  function saveTaskDetail() {
+  function saveCurrentTaskDetail() {
     if(!currentDetailTaskId) return;
     const task = tasks.find(t => t.id === currentDetailTaskId);
     if(task) {
@@ -911,6 +886,42 @@
     saveData(); renderUI(); return true;
   }
 
+  // Inline edit for list name in main view (when viewing a custom list)
+  function makeTitleEditable() {
+    const titleEl = document.getElementById("viewTitle");
+    if (currentView.type !== "list") return;
+    const currentName = titleEl.innerText;
+    const input = document.createElement("input");
+    input.value = currentName;
+    input.style.fontSize = "28px";
+    input.style.fontWeight = "600";
+    input.style.fontFamily = "inherit";
+    input.style.background = "var(--card-bg)";
+    input.style.color = "var(--text-primary)";
+    input.style.border = "1px solid var(--input-border)";
+    input.style.borderRadius = "12px";
+    input.style.padding = "4px 8px";
+    input.style.width = "auto";
+    titleEl.replaceWith(input);
+    input.focus();
+    const saveEdit = () => {
+      const newName = input.value.trim();
+      if(newName && newName !== currentName) {
+        const list = lists.find(l => l.id === currentView.id);
+        if(list) {
+          list.name = newName;
+          saveData();
+          renderUI();
+          showToast(`List renamed to "${newName}"`);
+        } else { renderUI(); }
+      } else {
+        renderUI();
+      }
+    };
+    input.addEventListener('blur', saveEdit);
+    input.addEventListener('keypress', (e) => { if(e.key === 'Enter') saveEdit(); });
+  }
+
   function showToast(msg) { const t=document.getElementById("toastMsg"); t.innerText=msg; t.style.opacity='1'; setTimeout(()=>t.style.opacity='0',2300); }
   function escapeHtml(str) { return str.replace(/[&<>]/g, m=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
 
@@ -918,7 +929,16 @@
     let title="";
     if(currentView.type==="smart") title=currentView.value==="all"?"All Tasks":currentView.value==="important"?"Important":"Planned";
     else title=lists.find(l=>l.id===currentView.id)?.name||"Inbox";
-    document.getElementById("viewTitle").innerText = title;
+    const titleEl = document.getElementById("viewTitle");
+    titleEl.innerText = title;
+    // Attach click-to-edit only for custom lists (not smart views)
+    if(currentView.type === "list") {
+      titleEl.style.cursor = "pointer";
+      titleEl.onclick = () => makeTitleEditable();
+    } else {
+      titleEl.style.cursor = "default";
+      titleEl.onclick = null;
+    }
     renderSidebar();
     renderTasks();
   }
@@ -939,9 +959,8 @@
   function checkReminders() { if(!("Notification" in window)) return; const now=new Date(); tasks.forEach(t=>{ if(t.reminderTime && !t.notified && !t.completed && new Date(t.reminderTime)<=now) { t.notified=true; if(Notification.permission==="granted") new Notification("⏰ Reminder",{body:`"${t.title}" is due!`}); else showToast(`Reminder: ${t.title}`); saveData(); renderUI(); } }); }
 
   // Event listeners
-  document.getElementById("addTaskBtn").addEventListener("click",()=>{ const inp=document.getElementById("newTaskInput"); if(inp.value.trim()) addTask(inp.value); inp.value=""; });
   document.getElementById("addIconBtn").addEventListener("click",()=>{ const inp=document.getElementById("newTaskInput"); if(inp.value.trim()) addTask(inp.value); inp.value=""; });
-  document.getElementById("newTaskInput").addEventListener("keypress",e=>{if(e.key==="Enter") document.getElementById("addTaskBtn").click();});
+  document.getElementById("newTaskInput").addEventListener("keypress",e=>{if(e.key==="Enter") document.getElementById("addIconBtn").click();});
   
   document.querySelectorAll(".nav-item").forEach(el=>{
     el.addEventListener("click",()=>{
@@ -959,13 +978,8 @@
   
   // Task detail modal events
   document.getElementById("closeDetailBtn").addEventListener("click", closeTaskDetail);
+  document.getElementById("saveTaskBtn").addEventListener("click", saveCurrentTaskDetail);
   document.getElementById("deleteTaskBtn").addEventListener("click", deleteCurrentTask);
-  document.getElementById("detailTitle").addEventListener("change", saveTaskDetail);
-  document.getElementById("detailImportant").addEventListener("change", saveTaskDetail);
-  document.getElementById("detailDueDate").addEventListener("change", saveTaskDetail);
-  document.getElementById("detailReminder").addEventListener("change", saveTaskDetail);
-  document.getElementById("detailRepeatInterval").addEventListener("change", saveTaskDetail);
-  document.getElementById("detailRepeatPeriod").addEventListener("change", saveTaskDetail);
   
   // Sort menu
   const menuBtn = document.getElementById("menuDotsBtn");
