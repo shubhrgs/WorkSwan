@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#ffffff" id="themeColorMeta">
+  <meta name="theme-color" content="#C04657" id="themeColorMeta">
   <meta name="description" content="WorkSwan - minimalist task manager with lists, reminders, recurrence">
   <link rel="manifest" href="manifest.json">
   <title>WorkSwan</title>
@@ -16,7 +16,7 @@
       box-sizing: border-box;
     }
 
-    /* Light / Dark variables */
+    /* Light / Dark variables - ULTRA DARK for dark mode */
     :root {
       --accent-color: #C04657; /* Brick Red - Hex:#C04657, RGB:192,70,87 */
       --accent-rgb: 192, 70, 87;
@@ -36,49 +36,51 @@
       --badge-bg: #f0f2f5;
       --icon-color: #7a7a7a;
       --delete-btn-hover: #f0f0f0;
-      --modal-bg: #0a0a0a; /* Dark black for detailed page background */
+      --modal-bg: #000000; /* Ultra dark black */
       --modal-text: #ffffff;
-      --modal-border: #2a2a2a;
+      --modal-border: #1a1a1a;
       --toast-bg: #1f1f1f;
       --toast-text: white;
       --overlay-bg: rgba(0,0,0,0.3);
-      --popup-bg: #1a1a1a;
+      --popup-bg: #0a0a0a;
       --popup-text: #ffffff;
       --star-color: #9a9a9a; /* Grey hollow star for monochrome design */
       --star-filled: var(--accent-color);
       --completed-section-color: var(--accent-color);
       --overdue-color: var(--accent-color);
+      --myday-color: #FFB347; /* Warm sun color for My Day */
     }
 
     body.dark {
-      --bg-app: #1e1e2e;
-      --sidebar-bg: #252526;
-      --sidebar-border: #3a3a3f;
-      --text-primary: #e4e4e7;
-      --text-secondary: #cdcdd4;
-      --text-muted: #a1a1aa;
-      --card-bg: #2d2d30;
-      --card-border: #3e3e42;
-      --card-hover-border: #5a5a60;
-      --nav-hover: #333338;
-      --nav-active-bg: #2d7aff30;
-      --nav-active-color: #6ea8fe;
-      --input-border: #3e3e42;
-      --badge-bg: #3a3a40;
-      --icon-color: #b0b0b8;
-      --delete-btn-hover: #3a3a40;
-      --modal-bg: #0a0a0a;
+      --bg-app: #000000; /* Ultra dark black - NO blue hue */
+      --sidebar-bg: #0a0a0a;
+      --sidebar-border: #1a1a1a;
+      --text-primary: #f0f0f0;
+      --text-secondary: #d0d0d0;
+      --text-muted: #888888;
+      --card-bg: #0f0f0f;
+      --card-border: #1a1a1a;
+      --card-hover-border: #2a2a2a;
+      --nav-hover: #151515;
+      --nav-active-bg: rgba(192, 70, 87, 0.15);
+      --nav-active-color: var(--accent-color);
+      --input-border: #2a2a2a;
+      --badge-bg: #1a1a1a;
+      --icon-color: #999999;
+      --delete-btn-hover: #1a1a1a;
+      --modal-bg: #000000;
       --modal-text: #ffffff;
-      --modal-border: #2a2a2a;
+      --modal-border: #1a1a1a;
       --toast-bg: #e4e4e7;
-      --toast-text: #1e1e2e;
-      --overlay-bg: rgba(0,0,0,0.5);
-      --popup-bg: #1a1a1a;
+      --toast-text: #000000;
+      --overlay-bg: rgba(0,0,0,0.6);
+      --popup-bg: #0a0a0a;
       --popup-text: #ffffff;
       --star-color: #9a9a9a;
       --star-filled: var(--accent-color);
       --completed-section-color: var(--accent-color);
       --overdue-color: var(--accent-color);
+      --myday-color: #FFB347;
     }
 
     body {
@@ -199,6 +201,17 @@
     }
     .nav-item:hover:not(.active) {
       background: var(--nav-hover);
+    }
+    
+    /* My Day special styling */
+    .nav-item[data-view="myday"] i {
+      color: var(--myday-color);
+    }
+    .nav-item.active[data-view="myday"] {
+      color: var(--myday-color);
+    }
+    .nav-item.active[data-view="myday"] i {
+      color: var(--myday-color);
     }
 
     .list-header {
@@ -401,7 +414,7 @@
       background: var(--nav-hover);
     }
 
-    /* Minimal task card */
+    /* Minimal task card - FIXED star positioning */
     .task-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -412,34 +425,76 @@
       gap: 14px;
       cursor: pointer;
       transition: background 0.1s;
+      position: relative;
     }
     .task-card:hover {
       background: var(--nav-hover);
     }
-    .task-check {
-      transform: scale(1.2);
-      cursor: pointer;
+    
+    /* Round circle checkboxes */
+    .task-check, .detail-complete-checkbox, .popup-datetime-picker input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
       accent-color: var(--accent-color);
+      cursor: pointer;
+      border: 2px solid var(--icon-color);
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      position: relative;
+      background: transparent;
+      transition: all 0.2s;
+    }
+    .task-check:checked, .detail-complete-checkbox:checked {
+      background: var(--accent-color);
+      border-color: var(--accent-color);
+    }
+    .task-check:checked::after, .detail-complete-checkbox:checked::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 8px;
+      height: 8px;
+      background: white;
+      border-radius: 50%;
+    }
+    
+    .task-content {
+      flex: 1;
+      min-width: 0;
     }
     .task-title {
-      flex: 1;
       font-size: 15px;
       font-weight: 500;
       color: var(--text-primary);
+      word-wrap: break-word;
     }
     .completed-task .task-title {
       text-decoration: line-through;
       color: var(--text-muted);
     }
+    
+    /* Star positioned at rightmost edge */
     .important-star {
-      color: var(--star-color); /* Grey hollow star */
+      color: var(--star-color);
       cursor: pointer;
       font-size: 18px;
       transition: color 0.2s;
+      margin-left: auto; /* Push to right edge */
+      flex-shrink: 0;
+      padding: 4px;
+      border-radius: 8px;
     }
     .important-star.filled {
       color: var(--star-filled);
     }
+    .important-star:hover {
+      background: var(--nav-hover);
+    }
+    
     .empty-state {
       text-align: center;
       padding: 48px 20px;
@@ -498,7 +553,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: var(--modal-bg); /* Dark black background */
+      background: var(--modal-bg); /* Ultra dark black background */
       color: var(--modal-text);
       z-index: 1000;
       overflow-y: auto;
@@ -512,19 +567,22 @@
     .detail-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       margin-bottom: 32px;
       padding-bottom: 20px;
       border-bottom: 1px solid var(--modal-border);
+      gap: 16px; /* FIXED: Added gap between checkbox area and close button */
     }
     .detail-header-content {
       display: flex;
       align-items: center;
       gap: 16px;
       flex: 1;
+      min-width: 0;
     }
     .detail-title-box {
       flex: 1;
+      min-width: 0;
     }
     .detail-title-input {
       font-size: 24px;
@@ -545,15 +603,21 @@
       display: flex;
       gap: 12px;
       align-items: center;
+      flex-shrink: 0;
     }
     .detail-important-star {
       color: var(--star-color);
       cursor: pointer;
       font-size: 22px;
       transition: color 0.2s;
+      padding: 4px;
+      border-radius: 8px;
     }
     .detail-important-star.filled {
       color: var(--star-filled);
+    }
+    .detail-important-star:hover {
+      background: rgba(255,255,255,0.1);
     }
     .detail-complete-checkbox {
       transform: scale(1.3);
@@ -566,9 +630,11 @@
       font-size: 28px;
       cursor: pointer;
       color: var(--icon-color);
-      padding: 4px;
+      padding: 8px;
       border-radius: 50%;
       transition: background 0.2s;
+      flex-shrink: 0;
+      margin-left: 8px; /* Extra spacing from checkbox */
     }
     .close-detail:hover {
       background: var(--nav-hover);
@@ -601,9 +667,10 @@
       align-items: center;
       justify-content: center;
       border-radius: 8px;
-      background: rgba(192, 70, 87, 0.15); /* Accent color with low opacity */
+      background: rgba(192, 70, 87, 0.15);
       color: var(--accent-color);
       font-size: 14px;
+      flex-shrink: 0;
     }
     .detail-action-label {
       font-size: 16px;
@@ -618,10 +685,21 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      flex-shrink: 0;
     }
     .detail-action-value.empty {
       color: var(--text-muted);
       font-style: italic;
+    }
+    .detail-action-value.overdue {
+      color: var(--overdue-color);
+      font-weight: 500;
+    }
+    
+    /* My Day action item */
+    .detail-action-item.myday-action .detail-action-icon {
+      background: rgba(255, 179, 71, 0.15);
+      color: var(--myday-color);
     }
     
     /* Notes section */
@@ -877,6 +955,12 @@
       .popup-sheet {
         padding: 20px 16px;
       }
+      .detail-header {
+        gap: 12px;
+      }
+      .close-detail {
+        margin-left: 4px;
+      }
     }
   </style>
 </head>
@@ -892,6 +976,21 @@
       <button class="close-sidebar-btn" id="closeSidebarBtn"><i class="fas fa-times"></i></button>
     </div>
     <div class="nav-group">
+      <!-- My Day option with sun SVG icon -->
+      <div class="nav-item" data-view="myday">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--myday-color)">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <span>My Day</span>
+      </div>
       <div class="nav-item" data-view="all"><i class="fas fa-inbox"></i><span>All Tasks</span></div>
       <div class="nav-item" data-view="important"><i class="fas fa-star"></i><span>Important</span></div>
       <div class="nav-item" data-view="planned"><i class="fas fa-calendar-alt"></i><span>Planned</span></div>
@@ -943,6 +1042,25 @@
   
   <!-- Action buttons below title -->
   <div class="detail-actions-list">
+    <!-- My Day action - NEW -->
+    <div class="detail-action-item myday-action" id="myDayAction">
+      <div class="detail-action-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+      </div>
+      <div class="detail-action-label">Add to My Day</div>
+      <div class="detail-action-value empty" id="myDayValue">Not added</div>
+    </div>
+    
     <div class="detail-action-item" id="dueDateAction">
       <div class="detail-action-icon"><i class="fas fa-calendar-day"></i></div>
       <div class="detail-action-label">Due date</div>
@@ -1048,7 +1166,7 @@
   let currentSort = "created";
   let currentDetailTaskId = null;
   let showCompletedSection = true;
-  let currentPopup = null; // Track which popup is open: 'due', 'reminder', 'repeat'
+  let currentPopup = null;
 
   function saveData() { localStorage.setItem("todo_clone_data", JSON.stringify({ tasks, lists })); }
   function loadData() {
@@ -1061,14 +1179,15 @@
       const now = new Date();
       const tomorrow = new Date(now); tomorrow.setDate(now.getDate()+1);
       tasks = [
-        { id: "1", title: "Review project", completed: false, important: true, dueDate: tomorrow.toISOString(), reminderTime: null, notified: false, listId: "default_inbox", recurrence: null, createdAt: Date.now() - 86400000, notes: "" },
-        { id: "2", title: "Buy groceries", completed: false, important: false, dueDate: null, reminderTime: new Date(now.getTime()+3600000).toISOString(), notified: false, listId: "default_inbox", recurrence: null, createdAt: Date.now(), notes: "" }
+        { id: "1", title: "Review project", completed: false, important: true, dueDate: tomorrow.toISOString(), reminderTime: null, notified: false, listId: "default_inbox", recurrence: null, createdAt: Date.now() - 86400000, notes: "", myDay: false },
+        { id: "2", title: "Buy groceries", completed: false, important: false, dueDate: null, reminderTime: new Date(now.getTime()+3600000).toISOString(), notified: false, listId: "default_inbox", recurrence: null, createdAt: Date.now(), notes: "", myDay: true }
       ];
       saveData();
     }
     tasks.forEach(t => { 
       if(!t.createdAt) t.createdAt = Date.now();
       if(!t.notes) t.notes = "";
+      if(t.myDay === undefined) t.myDay = false;
     });
     saveData();
   }
@@ -1091,8 +1210,14 @@
   function getFilteredTasks() {
     let filtered = [...tasks];
     if (currentView.type === "smart") {
-      if (currentView.value === "important") filtered = filtered.filter(t => t.important);
-      else if (currentView.value === "planned") filtered = filtered.filter(t => t.dueDate);
+      if (currentView.value === "myday") {
+        filtered = filtered.filter(t => t.myDay && !t.completed);
+      } else if (currentView.value === "important") {
+        filtered = filtered.filter(t => t.important);
+      } else if (currentView.value === "planned") {
+        filtered = filtered.filter(t => t.dueDate);
+      }
+      // "all" shows everything
     } else if (currentView.type === "list") {
       filtered = filtered.filter(t => t.listId === currentView.id);
     }
@@ -1108,11 +1233,10 @@
       case 'day': date.setDate(date.getDate() + interval); break;
       case 'week': date.setDate(date.getDate() + (interval * 7)); break;
       case 'weekdays': 
-        // For weekdays, add 1 day but skip weekends
         let daysToAdd = interval;
         while(daysToAdd > 0) {
           date.setDate(date.getDate() + 1);
-          if(date.getDay() !== 0 && date.getDay() !== 6) { // Not Sunday or Saturday
+          if(date.getDay() !== 0 && date.getDay() !== 6) {
             daysToAdd--;
           }
         }
@@ -1147,7 +1271,8 @@
       listId: originalTask.listId,
       recurrence: { ...originalTask.recurrence },
       createdAt: Date.now(),
-      notes: ""
+      notes: "",
+      myDay: false
     };
   }
 
@@ -1168,7 +1293,6 @@
       div.appendChild(nameSpan);
       div.appendChild(delBtn);
       
-      // Open list page on click anywhere (except delete)
       div.addEventListener("click", (e) => {
         if(e.target.closest(".delete-list")) return;
         currentView = { type: "list", id: list.id };
@@ -1217,17 +1341,21 @@
     const container = document.getElementById("tasksContainer");
     const filtered = getFilteredTasks();
     
-    // Separate completed and incomplete tasks
     const incompleteTasks = filtered.filter(t => !t.completed);
     const completedTasks = filtered.filter(t => t.completed);
     
     const remaining = incompleteTasks.length;
     document.getElementById("taskCount").innerText = `${filtered.length} task${filtered.length!==1?'s':''} · ${remaining} remaining`;
     
-    // Show sort indicator
+    // FIXED: Show sort indicator for ALL sort options including creation date
     const sortIndicator = document.getElementById("sortIndicator");
-    if (currentSort !== "created") {
-      sortIndicator.textContent = `Sorted by ${currentSort === 'name' ? 'name' : currentSort === 'due' ? 'due date' : 'creation date'}`;
+    const sortLabels = {
+      'name': 'name',
+      'created': 'creation date',
+      'due': 'due date'
+    };
+    if (sortLabels[currentSort]) {
+      sortIndicator.textContent = `Sorted by ${sortLabels[currentSort]}`;
       sortIndicator.classList.add("show");
     } else {
       sortIndicator.classList.remove("show");
@@ -1240,7 +1368,6 @@
     
     let html = '';
     
-    // Render incomplete tasks
     if (incompleteTasks.length > 0) {
       html += incompleteTasks.map(task => {
         const isDueOverdue = isOverdue(task.dueDate);
@@ -1248,7 +1375,7 @@
         return `
           <div class="task-card ${task.completed ? 'completed-task' : ''}" data-id="${task.id}">
             <input type="checkbox" class="task-check" ${task.completed ? 'checked' : ''} data-id="${task.id}">
-            <div>
+            <div class="task-content">
               <div class="task-title">${escapeHtml(task.title)}</div>
               ${dueDateDisplay}
             </div>
@@ -1258,7 +1385,6 @@
       }).join('');
     }
     
-    // Render completed section if there are completed tasks
     if (completedTasks.length > 0) {
       html += `
         <div class="completed-section-header">
@@ -1278,7 +1404,7 @@
           return `
             <div class="task-card completed-task" data-id="${task.id}">
               <input type="checkbox" class="task-check" checked data-id="${task.id}">
-              <div>
+              <div class="task-content">
                 <div class="task-title">${escapeHtml(task.title)}</div>
                 ${dueDateDisplay}
               </div>
@@ -1291,7 +1417,6 @@
     
     container.innerHTML = html;
     
-    // Attach events for completed section toggle
     const toggleBtn = document.getElementById("toggleCompletedBtn");
     if (toggleBtn) {
       toggleBtn.addEventListener("click", (e) => {
@@ -1301,7 +1426,6 @@
       });
     }
     
-    // Attach events for task cards
     document.querySelectorAll('.task-check').forEach(cb => cb.addEventListener('change', (e) => { 
       e.stopPropagation(); 
       handleTaskComplete(cb.getAttribute('data-id'), cb.checked); 
@@ -1334,6 +1458,11 @@
         task.recurrence = null;
       }
       task.completed = true;
+      // Remove from My Day when completed
+      if (task.myDay) {
+        task.myDay = false;
+        showToast("Removed from My Day");
+      }
     } else if (!isChecked && task.completed) {
       task.completed = false;
     }
@@ -1347,10 +1476,8 @@
     currentDetailTaskId = taskId;
     const modal = document.getElementById("taskDetailModal");
     
-    // Set title
     document.getElementById("detailTitle").value = task.title;
     
-    // Set important star
     const starEl = document.getElementById("detailImportantStar");
     if(task.important) {
       starEl.className = "fas fa-star detail-important-star filled";
@@ -1358,16 +1485,17 @@
       starEl.className = "far fa-star detail-important-star";
     }
     
-    // Set complete checkbox
     document.getElementById("detailCompleteCheckbox").checked = task.completed;
     
-    // Set action values
+    // My Day value
+    document.getElementById("myDayValue").textContent = task.myDay ? "Added" : "Not added";
+    document.getElementById("myDayValue").className = task.myDay ? "detail-action-value" : "detail-action-value empty";
+    
     document.getElementById("dueDateValue").textContent = task.dueDate ? formatDateTime(task.dueDate) : "Not set";
     document.getElementById("dueDateValue").className = task.dueDate && isOverdue(task.dueDate) && !task.completed ? "detail-action-value overdue" : "detail-action-value";
     
     document.getElementById("reminderValue").textContent = task.reminderTime ? formatDateTime(task.reminderTime) : "Not set";
     
-    // Set repeat value
     if(task.recurrence && task.recurrence.period !== "none") {
       if(task.recurrence.period === "custom") {
         document.getElementById("repeatValue").textContent = `Every ${task.recurrence.interval} ${task.recurrence.unit}`;
@@ -1386,7 +1514,6 @@
       document.getElementById("repeatValue").textContent = "Never";
     }
     
-    // Set notes
     document.getElementById("detailNotes").value = task.notes || "";
     
     modal.classList.add("active");
@@ -1439,7 +1566,8 @@
       listId: target, 
       recurrence: null, 
       createdAt: Date.now(),
-      notes: ""
+      notes: "",
+      myDay: currentView.value === "myday" // Auto-add to My Day if viewing My Day
     };
     tasks.unshift(newTask);
     saveData(); 
@@ -1447,7 +1575,6 @@
     return true;
   }
 
-  // Inline edit for list name in main view (when viewing a custom list)
   function makeTitleEditable() {
     const titleEl = document.getElementById("viewTitle");
     if (currentView.type !== "list") return;
@@ -1496,11 +1623,17 @@
 
   function renderUI() {
     let title="";
-    if(currentView.type==="smart") title=currentView.value==="all"?"All Tasks":currentView.value==="important"?"Important":"Planned";
+    if(currentView.type==="smart") {
+      if(currentView.value==="myday") title="My Day";
+      else if(currentView.value==="all") title="All Tasks";
+      else if(currentView.value==="important") title="Important";
+      else if(currentView.value==="planned") title="Planned";
+    }
     else title=lists.find(l=>l.id===currentView.id)?.name||"Inbox";
+    
     const titleEl = document.getElementById("viewTitle");
     titleEl.innerText = title;
-    // Attach click-to-edit only for custom lists (not smart views)
+    
     if(currentView.type === "list") {
       titleEl.style.cursor = "pointer";
       titleEl.onclick = () => makeTitleEditable();
@@ -1531,7 +1664,7 @@
     document.body.classList.toggle('dark'); 
     localStorage.setItem('darkMode', document.body.classList.contains('dark')); 
     const meta=document.getElementById('themeColorMeta'); 
-    if(meta) meta.setAttribute('content', document.body.classList.contains('dark')?'#1e1e2e':'#ffffff'); 
+    if(meta) meta.setAttribute('content', document.body.classList.contains('dark')?'#000000':'#C04657'); 
   }
 
   function requestNotificationPermission() { 
@@ -1558,7 +1691,6 @@
     document.getElementById("popupOverlay").classList.add("active");
     document.getElementById(popupId + "Popup").classList.add("active");
     
-    // Set current values in popups
     if(popupId === "dueDate" || popupId === "reminder") {
       const task = tasks.find(t => t.id === currentDetailTaskId);
       if(task) {
@@ -1567,7 +1699,6 @@
         if(value) {
           input.value = value.slice(0,16);
         } else {
-          // Set to current time as default
           const now = new Date();
           now.setMinutes(now.getMinutes() + 30);
           input.value = now.toISOString().slice(0,16);
@@ -1576,7 +1707,6 @@
     } else if(popupId === "repeat") {
       const task = tasks.find(t => t.id === currentDetailTaskId);
       if(task && task.recurrence && task.recurrence.period !== "none") {
-        // Select the appropriate option
         document.querySelectorAll(".repeat-option").forEach(opt => {
           opt.classList.remove("selected");
           if(opt.dataset.value === task.recurrence.period) {
@@ -1584,7 +1714,6 @@
           }
         });
         
-        // Show custom section if needed
         const customSection = document.getElementById("repeatCustom");
         if(task.recurrence.period === "custom") {
           customSection.classList.add("show");
@@ -1594,7 +1723,6 @@
           customSection.classList.remove("show");
         }
       } else {
-        // Default to "Never" selected
         document.querySelectorAll(".repeat-option").forEach(opt => {
           opt.classList.remove("selected");
           if(opt.dataset.value === "none") {
@@ -1622,7 +1750,7 @@
       task.dueDate = value ? new Date(value).toISOString() : null;
       saveData();
       renderUI();
-      openTaskDetail(currentDetailTaskId); // Refresh detail view
+      openTaskDetail(currentDetailTaskId);
       closePopup();
       showToast("Due date updated");
     }
@@ -1634,10 +1762,10 @@
     if(task) {
       const value = document.getElementById("popupReminder").value;
       task.reminderTime = value ? new Date(value).toISOString() : null;
-      task.notified = false; // Reset notification status
+      task.notified = false;
       saveData();
       renderUI();
-      openTaskDetail(currentDetailTaskId); // Refresh detail view
+      openTaskDetail(currentDetailTaskId);
       closePopup();
       showToast("Reminder updated");
     }
@@ -1647,7 +1775,6 @@
     if(!currentDetailTaskId) return;
     const task = tasks.find(t => t.id === currentDetailTaskId);
     if(task) {
-      // Find selected option
       const selectedOption = document.querySelector(".repeat-option.selected");
       if(!selectedOption) return;
       
@@ -1664,7 +1791,6 @@
           unit: unit 
         };
       } else {
-        // For predefined options, use period as both period and unit
         task.recurrence = { 
           period: period, 
           interval: period === "weekdays" || period === "fortnight" ? 1 : undefined,
@@ -1674,9 +1800,23 @@
       
       saveData();
       renderUI();
-      openTaskDetail(currentDetailTaskId); // Refresh detail view
+      openTaskDetail(currentDetailTaskId);
       closePopup();
       showToast("Repeat settings updated");
+    }
+  }
+  
+  // My Day toggle function
+  function toggleMyDay() {
+    if(!currentDetailTaskId) return;
+    const task = tasks.find(t => t.id === currentDetailTaskId);
+    if(task) {
+      task.myDay = !task.myDay;
+      document.getElementById("myDayValue").textContent = task.myDay ? "Added" : "Not added";
+      document.getElementById("myDayValue").className = task.myDay ? "detail-action-value" : "detail-action-value empty";
+      saveData();
+      renderUI();
+      showToast(task.myDay ? "Added to My Day" : "Removed from My Day");
     }
   }
 
@@ -1739,24 +1879,18 @@
     closeTaskDetail();
   });
   
-  // Action buttons for due date, reminder, repeat
+  // Action buttons
+  document.getElementById("myDayAction").addEventListener("click", toggleMyDay);
   document.getElementById("dueDateAction").addEventListener("click", () => openPopup("dueDate"));
   document.getElementById("reminderAction").addEventListener("click", () => openPopup("reminder"));
   document.getElementById("repeatAction").addEventListener("click", () => openPopup("repeat"));
   
   // Popup events
   document.getElementById("popupOverlay").addEventListener("click", closePopup);
-  
-  // Due date popup
   document.getElementById("dueDateDoneBtn").addEventListener("click", saveDueDate);
-  
-  // Reminder popup
   document.getElementById("reminderDoneBtn").addEventListener("click", saveReminder);
-  
-  // Repeat popup
   document.getElementById("repeatDoneBtn").addEventListener("click", saveRepeat);
   
-  // Repeat options selection
   document.querySelectorAll(".repeat-option").forEach(option => {
     option.addEventListener("click", () => {
       document.querySelectorAll(".repeat-option").forEach(opt => opt.classList.remove("selected"));
@@ -1771,7 +1905,6 @@
     });
   });
   
-  // Delete task button in detail view
   document.getElementById("detailDeleteBtn").addEventListener("click", deleteCurrentTask);
   
   // Sort menu
@@ -1784,7 +1917,12 @@
       currentSort = el.getAttribute("data-sort"); 
       renderUI(); 
       sortMenu.classList.remove("show"); 
-      showToast(`Sorted by ${currentSort === 'name' ? 'name' : currentSort === 'due' ? 'due date' : 'creation date'}`); 
+      const sortLabels = {
+        'name': 'name',
+        'created': 'creation date',
+        'due': 'due date'
+      };
+      showToast(`Sorted by ${sortLabels[currentSort] || currentSort}`); 
     });
   });
 
