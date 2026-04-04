@@ -864,7 +864,7 @@
       font-family: inherit;
     }
 
-    /* FIX #1: Date/Time Picker Accent Color Override */
+    /* Date/Time Picker Accent Color Override */
     input[type="datetime-local"],
     input[type="date"],
     input[type="time"] {
@@ -878,7 +878,6 @@
       border-color: var(--accent-color) !important;
       box-shadow: 0 0 0 3px rgba(192, 70, 87, 0.2);
     }
-    /* Webkit calendar icon tinting */
     input[type="datetime-local"]::-webkit-calendar-picker-indicator,
     input[type="date"]::-webkit-calendar-picker-indicator,
     input[type="time"]::-webkit-calendar-picker-indicator {
@@ -1059,7 +1058,6 @@
     </div>
     <div id="customListsContainer" class="custom-list-container"></div>
     <div class="sidebar-footer">
-      <!-- FIX #2: Icon-only theme toggle (no text) -->
       <div class="dark-mode-sidebar" id="darkModeSidebarBtn" title="Toggle theme">
         <i class="fas fa-sun" id="themeToggleIcon"></i>
       </div>
@@ -1086,7 +1084,6 @@
 
 <!-- Task Detail Modal -->
 <div id="taskDetailModal" class="detail-modal">
-  <!-- Back navigation -->
   <div class="detail-back-nav" id="detailBackBtn">
     <i class="fas fa-arrow-left"></i> <span>Back</span>
   </div>
@@ -1226,8 +1223,69 @@
   let showCompletedSection = true;
   let currentPopup = null;
 
-  function saveData() { localStorage.setItem("todo_clone_data", JSON.stringify({ tasks, lists })); }
+  function saveData() { 
+    localStorage.setItem("todo_clone_data", JSON.stringify({ tasks, lists })); 
+    updateAppBadge(); // Sync badge on every save
+  }
   
+  // PWA BADGE MANAGEMENT
+  async function updateAppBadge() {
+    if (!('setAppBadge' in navigator)) return;
+    try {
+      const activeCount = tasks.filter(t => !t.completed).length;
+      if (activeCount > 0) {
+        await navigator.setAppBadge(activeCount);
+      } else {
+        await navigator.clearAppBadge();
+      }
+    } catch (e) {
+      console.warn('Badge update failed:', e);
+    }
+  }
+
+  // ENHANCED NOTIFICATION SYSTEM
+  function sendTaskNotification(task) {
+    if (Notification.permission !== "granted") return;
+    
+    const title = task.reminderTime ? "⏰ Reminder" : "📅 Task Due";
+    const notification = new Notification(title, {
+      body: `"${task.title}"${task.dueDate ? ` • Due: ${formatDateTime(task.dueDate)}` : ''}`,
+      icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"%3E%3Crect width="192" height="192" fill="%23C04657"/%3E%3Ctext x="96" y="130" font-size="110" text-anchor="middle" fill="white" font-family="Arial"%3E✓%3C/text%3E%3C/svg%3E',
+      badge: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"%3E%3Crect width="192" height="192" fill="%23C04657"/%3E%3Ctext x="96" y="130" font-size="110" text-anchor="middle" fill="white" font-family="Arial"%3E✓%3C/text%3E%3C/svg%3E',
+      tag: `task-${task.id}`,
+      vibrate: [200, 100, 200],
+      requireInteraction: true,
+      silent: false
+    });
+
+    notification.onclick = () => {
+      window.focus();
+      openTaskDetail(task.id);
+    };
+  }
+
+  function checkTaskNotifications() {
+    if (!("Notification" in window)) return;
+    const now = new Date();
+    let updated = false;
+    
+    tasks.forEach(t => {
+      if (t.completed || t.notified) return;
+      
+      const triggerTime = t.reminderTime ? new Date(t.reminderTime) : (t.dueDate ? new Date(t.dueDate) : null);
+      if (triggerTime && triggerTime <= now) {
+        sendTaskNotification(t);
+        t.notified = true;
+        updated = true;
+      }
+    });
+    
+    if (updated) {
+      saveData();
+      renderUI();
+    }
+  }
+
   function loadData() {
     const raw = localStorage.getItem("todo_clone_data");
     if (raw) {
@@ -1653,7 +1711,6 @@
     else document.body.classList.remove('dark'); 
   }
 
-  // DYNAMIC PWA THEME COLOR FIX
   function updateDynamicThemeColor() {
     const isDark = document.body.classList.contains('dark');
     const themeColor = isDark ? '#000000' : '#C04657';
@@ -1661,37 +1718,38 @@
     if (meta) meta.setAttribute('content', themeColor);
   }
 
-  // FIX #2: Update theme toggle icon dynamically
   function updateThemeToggleIcon() {
     const isDark = document.body.classList.contains('dark');
     const icon = document.getElementById('themeToggleIcon');
-    if (icon) {
-      icon.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
-    }
+    if (icon) icon.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
   }
   
   function toggleDarkMode() { 
     document.body.classList.toggle('dark'); 
     localStorage.setItem('darkMode', document.body.classList.contains('dark')); 
     updateDynamicThemeColor();
-    updateThemeToggleIcon(); // Update icon
+    updateThemeToggleIcon();
   }
 
-  function requestNotificationPermission() { if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); }
-  
-  function checkReminders() { 
-    if(!("Notification" in window)) return; 
-    const now=new Date(); 
-    tasks.forEach(t=>{ 
-      if(t.reminderTime && !t.notified && !t.completed && new Date(t.reminderTime)<=now) { 
-        t.notified=true; 
-        if(Notification.permission==="granted") new Notification("⏰ Reminder",{body:`"${t.title}" is due!`}); 
-        else showToast(`Reminder: ${t.title}`); 
-        saveData(); renderUI(); 
-      } 
-    }); 
+  function requestNotificationPermission() { 
+    if("Notification" in window && Notification.permission==="default") {
+      Notification.requestPermission().then(perm => {
+        if(perm === 'granted') {
+          showToast("Notifications enabled");
+          updateAppBadge();
+        }
+      });
+    }
   }
   
+  // Visibility change handler: refresh badge & check missed notifications when app comes to foreground
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      updateAppBadge();
+      checkTaskNotifications();
+    }
+  });
+
   function openPopup(popupId) {
     currentPopup = popupId;
     document.getElementById("popupOverlay").classList.add("active");
@@ -1741,6 +1799,7 @@
     if(task) {
       const value = document.getElementById("popupDueDate").value;
       task.dueDate = value ? new Date(value).toISOString() : null;
+      task.notified = false; // Reset notification for new due date
       saveData(); renderUI(); openTaskDetail(currentDetailTaskId); closePopup(); showToast("Due date updated");
     }
   }
@@ -1796,7 +1855,6 @@
   document.getElementById("backNavBtn").addEventListener("click", () => setSidebarVisible(true));
   document.getElementById("sidebarOverlay").addEventListener("click", () => setSidebarVisible(false));
   
-  // Detail modal events
   document.getElementById("detailBackBtn").addEventListener("click", closeTaskDetail);
   document.getElementById("detailTitle").addEventListener("blur", saveCurrentTaskDetail);
   document.getElementById("detailImportantStar").addEventListener("click", () => {
@@ -1830,7 +1888,6 @@
   document.getElementById("saveNotesBtn").addEventListener("click", saveNotesExplicit);
   document.getElementById("detailDeleteBtn").addEventListener("click", deleteCurrentTask);
   
-  // Sort menu
   const menuBtn = document.getElementById("menuDotsBtn");
   const sortMenu = document.getElementById("sortMenu");
   menuBtn.addEventListener("click", (e) => { e.stopPropagation(); sortMenu.classList.toggle("show"); });
@@ -1849,12 +1906,15 @@
   loadData(); 
   initDarkMode(); 
   updateDynamicThemeColor();
-  updateThemeToggleIcon(); // Set initial icon state
+  updateThemeToggleIcon();
+  updateAppBadge();
   requestNotificationPermission(); 
   renderUI(); 
   setSidebarVisible(true);
-  setInterval(checkReminders,30000); 
-  checkReminders();
+  
+  // Enhanced notification polling
+  setInterval(checkTaskNotifications, 30000);
+  checkTaskNotifications();
   
   if('serviceWorker' in navigator) {
     window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(e=>console.log(e)));
