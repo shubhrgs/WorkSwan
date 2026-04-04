@@ -1,1046 +1,953 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>eBookSwan™</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff" id="themeColorMeta">
+  <meta name="description" content="WorkSwan - minimalist task manager with lists, reminders, recurrence">
+  <link rel="manifest" href="manifest.json">
+  <title>WorkSwan · Task Manager</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2563eb">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="eBookSwan">
-<meta name="application-name" content="eBookSwan">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+    /* Light / Dark variables */
+    :root {
+      --bg-app: #ffffff;
+      --sidebar-bg: #fafafa;
+      --sidebar-border: #eaeef2;
+      --text-primary: #1e1e2f;
+      --text-secondary: #3b3a39;
+      --text-muted: #797979;
+      --card-bg: #ffffff;
+      --card-border: #edf0f3;
+      --card-hover-border: #d2dce6;
+      --nav-hover: #f0f2f5;
+      --nav-active-bg: #e9edf2;
+      --nav-active-color: #2d7aff;
+      --input-border: #e1e5ea;
+      --badge-bg: #f0f2f5;
+      --icon-color: #7a7a7a;
+      --delete-btn-hover: #f0f0f0;
+      --modal-bg: white;
+      --toast-bg: #1f1f1f;
+      --toast-text: white;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.02);
+      --back-btn-bg: transparent;
+    }
 
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
+    body.dark {
+      --bg-app: #1e1e2e;
+      --sidebar-bg: #252526;
+      --sidebar-border: #3a3a3f;
+      --text-primary: #e4e4e7;
+      --text-secondary: #cdcdd4;
+      --text-muted: #a1a1aa;
+      --card-bg: #2d2d30;
+      --card-border: #3e3e42;
+      --card-hover-border: #5a5a60;
+      --nav-hover: #333338;
+      --nav-active-bg: #2d7aff30;
+      --nav-active-color: #6ea8fe;
+      --input-border: #3e3e42;
+      --badge-bg: #3a3a40;
+      --icon-color: #b0b0b8;
+      --delete-btn-hover: #3a3a40;
+      --modal-bg: #2d2d30;
+      --toast-bg: #e4e4e7;
+      --toast-text: #1e1e2e;
+      --back-btn-bg: transparent;
+    }
 
-<style>
-/* ---------- RESET & BASE ---------- */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body {
-  height: 100%;
-  overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: #f0f2f5;
-  color: #1e293b;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: none;
-  overscroll-behavior: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-app);
+      color: var(--text-primary);
+      height: 100dvh;
+      overflow: hidden;
+      transition: background 0.2s, color 0.2s;
+    }
 
-/* ---------- APP SHELL ---------- */
-#app {
-  display: flex;
-  flex-direction: column;
-  height: 100dvh;
-  position: relative;
-  background: #f0f2f5;
-}
+    .app {
+      display: flex;
+      height: 100%;
+      width: 100%;
+      position: relative;
+    }
 
-/* ---------- COLLAPSIBLE HEADER with horizontal scroll ---------- */
-#headerWrap {
-  flex-shrink: 0;
-  overflow: hidden;
-  max-height: 180px;
-  transition: max-height 0.35s ease-out, opacity 0.2s;
-  opacity: 1;
-  z-index: 500;
-  will-change: max-height, opacity;
-  /* safe area top is applied inside header */
-  background: transparent;
-}
-#headerWrap.hidden {
-  max-height: 0;
-  opacity: 0;
-  pointer-events: none;
-}
+    /* ========= SIDEBAR with safe area bottom padding ========= */
+    .sidebar {
+      width: 280px;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--sidebar-border);
+      display: flex;
+      flex-direction: column;
+      padding: 28px 16px calc(20px + env(safe-area-inset-bottom, 0px)) 20px;
+      overflow-y: auto;
+      flex-shrink: 0;
+      transition: transform 0.25s ease;
+      z-index: 10;
+    }
 
-#headerPill {
-  position: fixed;
-  top: max(8px, env(safe-area-inset-top, 8px));
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(37, 99, 235, 0.94);
-  backdrop-filter: blur(8px);
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 6px 20px;
-  border-radius: 0 0 28px 28px;
-  z-index: 600;
-  pointer-events: auto;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-  touch-action: manipulation;
-  white-space: nowrap;
-}
-#headerWrap.hidden ~ #headerPill {
-  opacity: 1;
-}
+    body.sidebar-hidden .sidebar {
+      transform: translateX(-100%);
+      position: absolute;
+      height: 100%;
+    }
 
-/* Header with horizontal scrolling, no extra padding on items */
-header {
-  display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
-  gap: 8px;
-  align-items: center;
-  padding: 10px 12px;
-  /* safe area top only on container, not on each button */
-  padding-top: max(10px, env(safe-area-inset-top, 10px));
-  padding-bottom: 10px;
-  background: white;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  z-index: 501;
-  touch-action: pan-x pinch-zoom;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-}
-header::-webkit-scrollbar {
-  height: 3px;
-}
-header::-webkit-scrollbar-track {
-  background: #e2e8f0;
-}
-header::-webkit-scrollbar-thumb {
-  background: #2563eb;
-  border-radius: 10px;
-}
+    body.sidebar-hidden .main-content {
+      width: 100%;
+    }
 
-button, label.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 10px;
-  background: #2563eb;
-  color: white;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  min-height: 44px;
-  min-width: 44px;
-  transition: 0.1s linear;
-  touch-action: manipulation;
-  flex-shrink: 0;
-}
-button:active, label.btn:active { transform: scale(0.96); background: #1d4ed8; }
-button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-select, #searchInput {
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1.5px solid #cbd5e1;
-  background: white;
-  font-size: 15px;
-  min-height: 44px;
-  outline: none;
-  touch-action: manipulation;
-  flex-shrink: 0;
-}
-#searchInput { width: 150px; }
-#fileInput { display: none; }
-#pageInfo {
-  background: #f1f5f9;
-  padding: 4px 12px;
-  border-radius: 30px;
-  font-size: 12px;
-  font-weight: 600;
-  user-select: text;
-  -webkit-user-select: text;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
+    .logo-area {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+    .logo-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-left i {
+      font-size: 28px;
+      color: #2d7aff;
+    }
+    .logo-left h2 {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .close-sidebar-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--icon-color);
+      padding: 4px;
+    }
 
-#progressBarContainer {
-  height: 3px;
-  background: #e2e8f0;
-  flex-shrink: 0;
-}
-#progressBar {
-  height: 100%;
-  width: 0;
-  background: linear-gradient(90deg, #2563eb, #60a5fa);
-  transition: width 0.25s;
-}
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      margin: 2px 0;
+      border-radius: 12px;
+      font-weight: 500;
+      font-size: 15px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .nav-item i {
+      width: 24px;
+      font-size: 18px;
+      color: var(--icon-color);
+    }
+    .nav-item.active {
+      background: var(--nav-active-bg);
+      color: var(--nav-active-color);
+    }
+    .nav-item.active i {
+      color: var(--nav-active-color);
+    }
+    .nav-item:hover:not(.active) {
+      background: var(--nav-hover);
+    }
 
-#viewer {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  position: relative;
-  touch-action: pan-y pinch-zoom;
-  z-index: 100;
-  background: #fff;
-}
-#viewer iframe {
-  touch-action: pan-y pinch-zoom;
-  user-select: text;
-  -webkit-user-select: text;
-}
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 16px 12px 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .add-list-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--icon-color);
+      border-radius: 8px;
+      padding: 4px 8px;
+    }
+    .custom-list-container {
+      flex: 1;
+    }
+    .custom-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      margin: 2px 0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .custom-list-item span {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      font-size: 15px;
+      font-weight: 450;
+      flex: 1;
+    }
+    .list-name-text {
+      cursor: text;
+      padding: 2px 4px;
+      border-radius: 6px;
+    }
+    .list-name-text:hover {
+      background: var(--nav-hover);
+    }
+    .delete-list {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--icon-color);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 6px 8px;
+      border-radius: 8px;
+    }
+    .custom-list-item:hover .delete-list {
+      opacity: 1;
+    }
+    .delete-list:hover {
+      background: var(--delete-btn-hover);
+      color: #d13438;
+    }
 
-/* Panels */
-#panelOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(3px);
-  z-index: 999;
-  opacity: 0;
-  pointer-events: none;
-  transition: 0.25s;
-}
-#panelOverlay.visible {
-  opacity: 1;
-  pointer-events: auto;
-}
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 24px;
+      border-top: 1px solid var(--sidebar-border);
+      margin-bottom: 0;
+    }
+    .dark-mode-sidebar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .dark-mode-sidebar i {
+      width: 24px;
+      font-size: 18px;
+    }
 
-.panel {
-  position: fixed;
-  top: 0;
-  left: -105%;
-  width: min(340px, 88vw);
-  height: 100dvh;
-  background: white;
-  box-shadow: 8px 0 30px rgba(0,0,0,0.2);
-  transition: left 0.3s cubic-bezier(0.2, 0.9, 0.4, 1);
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-}
-.panel.open { left: 0; }
-.panelHeader {
-  padding: 16px;
-  padding-top: max(16px, env(safe-area-inset-top, 16px));
-  background: #2563eb;
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  font-weight: 700;
-  align-items: center;
-}
-.panelContent {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
-}
+    /* MAIN CONTENT - with safe area bottom padding */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      background: var(--bg-app);
+      padding: 28px 36px calc(20px + env(safe-area-inset-bottom, 0px)) 36px;
+      transition: all 0.2s;
+      position: relative;
+    }
 
-.toc-row, .bm-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 8px;
-  border-radius: 12px;
-  cursor: pointer;
-  min-height: 44px;
-  touch-action: manipulation;
-}
-.toc-row:active, .bm-row:active { background: #eef2ff; }
-.toc-label, .bm-label {
-  flex: 1;
-  font-size: 14px;
-  word-break: break-word;
-  user-select: text;
-  -webkit-user-select: text;
-}
-.toc-expand-btn {
-  background: none;
-  border: 1.5px solid #2563eb;
-  color: #2563eb;
-  border-radius: 8px;
-  padding: 2px 12px;
-  font-size: 11px;
-  min-width: auto;
-  min-height: 32px;
-  touch-action: manipulation;
-}
-.toc-children {
-  display: none;
-  border-left: 2px solid #bfdbfe;
-  margin-left: 18px;
-}
-.toc-children.open { display: block; }
+    .back-nav {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      cursor: pointer;
+      width: fit-content;
+      padding: 6px 12px;
+      border-radius: 40px;
+      background: var(--nav-hover);
+      color: var(--text-secondary);
+    }
+    body.sidebar-hidden .back-nav {
+      display: flex;
+    }
 
-.bm-del {
-  background: #fee2e2;
-  color: #dc2626;
-  border: none;
-  padding: 4px 12px;
-  border-radius: 8px;
-  font-size: 12px;
-  touch-action: manipulation;
-}
+    /* header with title and menu */
+    .view-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+    .view-header h1 {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .menu-dots {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--icon-color);
+      padding: 8px;
+      border-radius: 40px;
+    }
+    .menu-dots:hover {
+      background: var(--nav-hover);
+    }
+    .task-count {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      width: 100%;
+    }
 
-/* Search modal */
-#searchBackdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(5px);
-  z-index: 1999;
-  display: none;
-  touch-action: none;
-}
-#searchResults {
-  position: fixed;
-  top: 8%;
-  left: 5%;
-  right: 5%;
-  bottom: 8%;
-  background: white;
-  border-radius: 32px;
-  display: none;
-  flex-direction: column;
-  z-index: 2000;
-  overflow: hidden;
-  box-shadow: 0 25px 50px -12px black;
-  touch-action: pan-y;
-}
-#searchResults.visible { display: flex; }
-#searchBackdrop.visible { display: block; }
-.searchHeader {
-  padding: 18px;
-  padding-top: max(18px, env(safe-area-inset-top, 18px));
-  background: #2563eb;
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 700;
-  font-size: 16px;
-  flex-shrink: 0;
-}
-#searchList {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
-}
-.result-item {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 14px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  transition: 0.08s linear;
-  touch-action: manipulation;
-}
-.result-item:active {
-  background: #dbeafe;
-  transform: scale(0.99);
-}
-.result-excerpt {
-  font-size: 14px;
-  line-height: 1.5;
-  color: #1e293b;
-  user-select: text;
-  -webkit-user-select: text;
-}
-.result-excerpt mark {
-  background: #fde047;
-  border-radius: 4px;
-  padding: 0 2px;
-}
+    /* tasks container */
+    .tasks-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
 
-/* Dictionary bottom sheet */
-#dictPopup {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  border-radius: 28px 28px 0 0;
-  box-shadow: 0 -12px 40px rgba(0,0,0,0.2);
-  padding: 12px 20px 28px;
-  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-  z-index: 3000;
-  transform: translateY(100%);
-  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.2);
-  max-height: 70vh;
-  overflow-y: auto;
-  touch-action: pan-y;
-}
-#dictPopup.open { transform: translateY(0); }
-.dict-handle {
-  width: 50px;
-  height: 5px;
-  background: #cbd5e1;
-  border-radius: 10px;
-  margin: 6px auto 18px;
-  cursor: grab;
-  touch-action: none;
-}
-.dict-word {
-  font-size: 28px;
-  font-weight: 800;
-  margin-bottom: 6px;
-  user-select: text;
-  -webkit-user-select: text;
-}
-.dict-def {
-  margin: 12px 0;
-  line-height: 1.5;
-  user-select: text;
-  -webkit-user-select: text;
-}
+    /* ADD TASK PANE (bottom) - safe area aware */
+    .add-task-pane {
+      background: var(--card-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 20px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: auto;
+      position: sticky;
+      bottom: 0;
+      background: var(--bg-app);
+      backdrop-filter: blur(4px);
+      margin-bottom: 0;
+    }
+    .add-task-pane input {
+      flex: 1;
+      border: none;
+      font-size: 15px;
+      padding: 10px 0;
+      outline: none;
+      background: transparent;
+      color: var(--text-primary);
+    }
+    .add-task-pane button, .add-icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #2d7aff;
+      font-size: 20px;
+      padding: 0 8px;
+    }
+    .add-task-pane .add-text-btn {
+      background: #2d7aff;
+      color: white;
+      border-radius: 40px;
+      padding: 8px 20px;
+      font-size: 14px;
+      font-weight: 500;
+    }
 
-/* Toast & loading */
-#toast {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background: #0f172ad9;
-  backdrop-filter: blur(12px);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 60px;
-  font-size: 14px;
-  z-index: 9999;
-  opacity: 0;
-  transition: 0.2s;
-  pointer-events: none;
-  white-space: nowrap;
-}
-#toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-#loadingOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(255,255,255,0.94);
-  backdrop-filter: blur(8px);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 16px;
-  z-index: 5000;
-}
-#loadingOverlay.visible { display: flex; }
-.spinner {
-  width: 44px;
-  height: 44px;
-  border: 4px solid #bfdbfe;
-  border-top-color: #2563eb;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+    .task-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .task-check {
+      transform: scale(1.2);
+      cursor: pointer;
+      accent-color: #2d7aff;
+    }
+    .task-title {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .completed-task .task-title {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+    .task-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+    .badge {
+      background: var(--badge-bg);
+      border-radius: 30px;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .important-star {
+      color: #ffb443;
+      cursor: pointer;
+    }
+    .task-actions i {
+      cursor: pointer;
+      margin-left: 12px;
+      color: var(--icon-color);
+      font-size: 16px;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+    }
 
-.swipe-arrow {
-  position: fixed;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(37,99,235,0.85);
-  backdrop-filter: blur(4px);
-  color: white;
-  font-size: 28px;
-  font-weight: bold;
-  padding: 16px 10px;
-  z-index: 800;
-  opacity: 0;
-  transition: opacity 0.2s;
-  pointer-events: none;
-  border-radius: 12px;
-}
-#arrowLeft { left: 0; border-radius: 0 16px 16px 0; }
-#arrowRight { right: 0; border-radius: 16px 0 0 16px; }
-
-#installBtn {
-  position: fixed;
-  bottom: 24px;
-  right: 20px;
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 60px;
-  padding: 12px 22px;
-  font-weight: 600;
-  z-index: 9999;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-  display: none;
-  min-height: 48px;
-  touch-action: manipulation;
-}
-
-/* Themes */
-body.dark header, body.dark .panel, body.dark #searchResults, body.dark #dictPopup {
-  background: #0f172a;
-  color: #e2e8f0;
-}
-body.dark .result-item { background: #1e293b; border-color: #334155; }
-body.dark .toc-row:active, body.dark .bm-row:active { background: #1e293b; }
-
-body.sepia header, body.sepia .panel, body.sepia #searchResults, body.sepia #dictPopup {
-  background: #fef7e0;
-  color: #5e3a1c;
-}
-body.sepia .result-item { background: #fff4e4; border-color: #e2c8a0; }
-body.sepia .toc-row:active { background: #f3e5c9; }
-
-@media (max-width: 560px) {
-  header { gap: 6px; padding: 8px 12px; padding-top: max(8px, env(safe-area-inset-top, 8px)); }
-  button, label.btn { padding: 6px 10px; font-size: 12px; min-height: 40px; }
-  #searchInput { width: 120px; font-size: 13px; }
-}
-</style>
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      top:0;left:0;width:100%;height:100%;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      visibility: hidden;
+      opacity: 0;
+      transition: 0.2s;
+    }
+    .modal-overlay.active {
+      visibility: visible;
+      opacity: 1;
+    }
+    .modal-card {
+      background: var(--modal-bg);
+      width: 90%;
+      max-width: 520px;
+      border-radius: 32px;
+      padding: 28px 26px;
+      color: var(--text-primary);
+    }
+    .modal-card input, .modal-card select {
+      width: 100%;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      border: 1px solid var(--input-border);
+      border-radius: 16px;
+      background: var(--card-bg);
+      color: var(--text-primary);
+      font-family: inherit;
+    }
+    .recurrence-group {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .recurrence-group input, .recurrence-group select {
+      width: auto;
+      margin-bottom: 0;
+      flex: 1;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .btn-primary { background: #2d7aff; color: white; border: none; padding: 8px 24px; border-radius: 40px; cursor: pointer; font-weight: 500; }
+    .toast-msg {
+      position: fixed;
+      bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--toast-bg);
+      color: var(--toast-text);
+      padding: 12px 24px;
+      border-radius: 60px;
+      font-size: 14px;
+      z-index: 1100;
+      opacity: 0;
+      transition: 0.2s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    /* sort dropdown */
+    .sort-menu {
+      position: absolute;
+      top: 70px;
+      right: 36px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      z-index: 200;
+      display: none;
+      overflow: hidden;
+    }
+    .sort-menu.show {
+      display: block;
+    }
+    .sort-menu div {
+      padding: 12px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    .sort-menu div:hover {
+      background: var(--nav-hover);
+    }
+    @media (max-width: 680px) {
+      .main-content {
+        padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px)) 20px;
+      }
+      .sidebar { width: 260px; }
+      .sort-menu { right: 20px; top: 65px; }
+      .toast-msg {
+        bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        white-space: normal;
+        text-align: center;
+      }
+    }
+  </style>
 </head>
 <body>
-
-<div id="app">
-  <div id="headerWrap">
-    <header>
-      <label class="btn" for="fileInput">📚 Open</label>
-      <input type="file" id="fileInput" accept=".epub">
-      <button id="prev">◀ Prev</button>
-      <button id="next">Next ▶</button>
-      <button id="tocBtn">📑 TOC</button>
-      <button id="bookmarkPanelBtn">🔖 List</button>
-      <button id="addBookmarkBtn">🔖+</button>
-      <button id="dictionaryBtn">📖 Define</button>
-      <button id="fontMinus">A−</button>
-      <button id="fontPlus">A+</button>
-      <select id="themeSelect">
-        <option value="light">☀️ Light</option>
-        <option value="dark">🌙 Dark</option>
-        <option value="sepia">📜 Sepia</option>
-      </select>
-      <input type="text" id="searchInput" placeholder="🔍 Search..." autocomplete="off">
-      <button id="searchBtn">Go</button>
-      <span id="pageInfo">📄 —</span>
-    </header>
+<div class="app">
+  <div class="sidebar" id="sidebar">
+    <div class="logo-area">
+      <div class="logo-left">
+        <i class="fas fa-check-circle"></i>
+        <h2>WorkSwan</h2>
+      </div>
+      <button class="close-sidebar-btn" id="closeSidebarBtn"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="nav-group">
+      <div class="nav-item" data-view="all"><i class="fas fa-inbox"></i><span>All Tasks</span></div>
+      <div class="nav-item" data-view="important"><i class="fas fa-star"></i><span>Important</span></div>
+      <div class="nav-item" data-view="planned"><i class="fas fa-calendar-alt"></i><span>Planned</span></div>
+    </div>
+    <div class="list-header">
+      <span>MY LISTS</span>
+      <button class="add-list-btn" id="addListBtn"><i class="fas fa-plus"></i></button>
+    </div>
+    <div id="customListsContainer" class="custom-list-container"></div>
+    <div class="sidebar-footer">
+      <div class="dark-mode-sidebar" id="darkModeSidebarBtn">
+        <i class="fas fa-moon"></i> <span>Dark mode</span>
+      </div>
+    </div>
   </div>
-  <div id="progressBarContainer"><div id="progressBar"></div></div>
-  <div id="viewer"></div>
+
+  <div class="main-content">
+    <div class="back-nav" id="backNavBtn">
+      <i class="fas fa-arrow-left"></i> <span>Back</span>
+    </div>
+    <div class="view-header">
+      <h1 id="viewTitle">All Tasks</h1>
+      <button class="menu-dots" id="menuDotsBtn"><i class="fas fa-ellipsis-v"></i></button>
+      <div class="task-count" id="taskCount"></div>
+    </div>
+    <div class="tasks-container" id="tasksContainer"></div>
+    
+    <!-- Add task pane at bottom -->
+    <div class="add-task-pane">
+      <button class="add-icon-btn" id="addIconBtn"><i class="fas fa-plus-circle"></i></button>
+      <input type="text" id="newTaskInput" placeholder="Add a task" autocomplete="off">
+      <button class="add-text-btn" id="addTaskBtn">Add</button>
+    </div>
+  </div>
 </div>
 
-<div id="headerPill">↓ Tap to show menu</div>
-<div id="panelOverlay"></div>
-
-<div id="tocPanel" class="panel">
-  <div class="panelHeader"><span>📑 Table of Contents</span><button id="closeTocBtn">✕</button></div>
-  <div id="tocContent" class="panelContent"></div>
+<!-- Sort dropdown -->
+<div class="sort-menu" id="sortMenu">
+  <div data-sort="name">Sort by name</div>
+  <div data-sort="created">Sort by creation date</div>
+  <div data-sort="due">Sort by due date</div>
 </div>
 
-<div id="bookmarkPanel" class="panel">
-  <div class="panelHeader"><span>🔖 Bookmarks</span><button id="closeBmBtn">✕</button></div>
-  <div id="bookmarkContent" class="panelContent"></div>
+<!-- Modal -->
+<div id="modalOverlay" class="modal-overlay">
+  <div class="modal-card">
+    <h3 id="modalTitle">Edit task</h3>
+    <input type="text" id="taskTitleInput" placeholder="Task title">
+    <label>Due date</label>
+    <input type="datetime-local" id="dueDateInput">
+    <label>Custom reminder</label>
+    <input type="datetime-local" id="reminderTimeInput">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px">
+      <input type="checkbox" id="importantCheckbox"> <label>Mark as Important</label>
+    </div>
+    <label>Repeat</label>
+    <div class="recurrence-group">
+      <input type="number" id="repeatInterval" min="1" max="99" value="1" style="width:80px">
+      <select id="repeatPeriod">
+        <option value="none">Never</option>
+        <option value="day">Day(s)</option>
+        <option value="week">Week(s)</option>
+        <option value="month">Month(s)</option>
+        <option value="year">Year(s)</option>
+      </select>
+    </div>
+    <div class="modal-buttons">
+      <button id="modalCancelBtn">Cancel</button>
+      <button id="modalSaveBtn" class="btn-primary">Save</button>
+    </div>
+  </div>
 </div>
-
-<div id="searchBackdrop"></div>
-<div id="searchResults">
-  <div class="searchHeader"><span id="searchCount">🔍 Search results</span><button id="closeSearchBtn">✕</button></div>
-  <div id="searchList"></div>
-</div>
-
-<div id="dictPopup">
-  <div class="dict-handle"></div>
-  <div id="dictContent"></div>
-  <button id="closeDictBtn" style="margin:16px auto 8px; background:#2563eb; border:none; color:white; padding:12px; border-radius:40px; width:100%;">Close</button>
-</div>
-
-<div id="toast"></div>
-<div id="loadingOverlay"><div class="spinner"></div><div>Loading book...</div></div>
-<button id="installBtn">📲 Install App</button>
-
-<div id="arrowLeft" class="swipe-arrow">‹</div>
-<div id="arrowRight" class="swipe-arrow">›</div>
+<div id="toastMsg" class="toast-msg"></div>
 
 <script>
-'use strict';
+  // ---------- DATA ----------
+  let tasks = [];
+  let lists = [{ id: "default_inbox", name: "Inbox" }];
+  let currentView = { type: "smart", value: "all" };
+  let editingTaskId = null;
+  let currentSort = "created"; // name, created, due
 
-// ---------- DOM elements ----------
-const $ = id => document.getElementById(id);
-const headerWrap = $('headerWrap'), headerPill = $('headerPill');
-const progressBar = $('progressBar'), pageInfo = $('pageInfo');
-const panelOverlay = $('panelOverlay'), toast = $('toast'), loadingOverlay = $('loadingOverlay');
-const viewer = $('viewer');
-
-let book, rendition;
-let currentFont = parseInt(localStorage.getItem('epub-font-size')) || 100;
-let currentTheme = localStorage.getItem('epub-theme') || 'light';
-let currentBookKey = '';
-let headerVisible = true;
-let lastSwipeTime = 0;
-let bookLoaded = false;
-let currentContentWindow = null;
-
-// ---------- Utilities ----------
-function showToast(msg, duration = 2600) {
-  toast.textContent = msg;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), duration);
-}
-
-function showLoading(msg) {
-  loadingOverlay.querySelector('div:last-child').innerText = msg || 'Loading...';
-  loadingOverlay.classList.add('visible');
-}
-
-function hideLoading() {
-  loadingOverlay.classList.remove('visible');
-}
-
-function showHeader() { 
-  headerVisible = true; 
-  headerWrap.classList.remove('hidden'); 
-}
-function hideHeader() { 
-  headerVisible = false; 
-  headerWrap.classList.add('hidden'); 
-}
-function toggleHeader() { 
-  headerVisible ? hideHeader() : showHeader(); 
-}
-
-headerPill.onclick = (e) => { e.stopPropagation(); showHeader(); };
-
-// ---------- Panels ----------
-function openPanel(panelId) {
-  closeAllPanels();
-  $(panelId).classList.add('open');
-  panelOverlay.classList.add('visible');
-  showHeader();
-}
-
-function closeAllPanels() {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
-  panelOverlay.classList.remove('visible');
-}
-
-panelOverlay.onclick = (e) => { 
-  if (e.target === panelOverlay) {
-    e.stopPropagation();
-    closeAllPanels();
+  function saveData() { localStorage.setItem("todo_clone_data", JSON.stringify({ tasks, lists })); }
+  function loadData() {
+    const raw = localStorage.getItem("todo_clone_data");
+    if (raw) {
+      try { const data = JSON.parse(raw); tasks = data.tasks || []; lists = data.lists || []; } catch(e) {}
+    }
+    if (!lists.some(l => l.id === "default_inbox")) lists.unshift({ id: "default_inbox", name: "Inbox" });
+    if (!tasks.length) {
+      const now = new Date();
+      const tomorrow = new Date(now); tomorrow.setDate(now.getDate()+1);
+      tasks = [
+        { id: "1", title: "Review project", completed: false, important: true, dueDate: tomorrow.toISOString(), reminderTime: null, notified: false, listId: "default_inbox", recurrence: null, createdAt: Date.now() - 86400000 },
+        { id: "2", title: "Buy groceries", completed: false, important: false, dueDate: null, reminderTime: new Date(now.getTime()+3600000).toISOString(), notified: false, listId: "default_inbox", recurrence: null, createdAt: Date.now() }
+      ];
+      saveData();
+    }
+    tasks.forEach(t => { if(!t.createdAt) t.createdAt = Date.now(); });
+    saveData();
   }
-};
-$('closeTocBtn').onclick = closeAllPanels;
-$('closeBmBtn').onclick = closeAllPanels;
 
-// ---------- Theme ----------
-function setTheme(theme) {
-  currentTheme = theme;
-  localStorage.setItem('epub-theme', theme);
-  document.body.classList.remove('dark', 'sepia');
-  if (theme === 'dark') document.body.classList.add('dark');
-  if (theme === 'sepia') document.body.classList.add('sepia');
-  $('themeSelect').value = theme;
-  if (rendition) rendition.themes.select(theme);
-}
-$('themeSelect').onchange = e => setTheme(e.target.value);
-setTheme(currentTheme);
-
-// ---------- SWIPE & TAP (enhanced for reliable page turns and header toggle) ----------
-function setupGestures() {
-  if (!rendition) return;
-  
-  rendition.hooks.content.register((contents) => {
-    const doc = contents.document;
-    if (!doc || doc.__ebookSwanGestures) return;
-    doc.__ebookSwanGestures = true;
-    
-    let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
-    let isVerticalSwipe = false;
-    
-    // Enable text selection
-    doc.body.style.userSelect = 'text';
-    doc.body.style.webkitUserSelect = 'text';
-    doc.body.style.touchAction = 'pan-y pinch-zoom';
-    
-    // Selection tracking for dictionary
-    doc.addEventListener('selectionchange', () => {
-      const selection = doc.getSelection();
-      if (selection && selection.toString().trim().length > 0) {
-        const word = selection.toString().trim().split(/\s+/)[0].replace(/[^\w'-]/g, '');
-        if (word.length > 1) window._lastSelectedWord = word;
-      }
-    });
-    
-    doc.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1) {
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-        touchStartTime = Date.now();
-        isVerticalSwipe = false;
-      }
-    }, { passive: true });
-    
-    doc.addEventListener('touchmove', (e) => {
-      if (e.touches.length !== 1) return;
-      const dx = Math.abs(e.touches[0].clientX - touchStartX);
-      const dy = Math.abs(e.touches[0].clientY - touchStartY);
-      if (dy > 25 && dy > dx) isVerticalSwipe = true;
-    }, { passive: true });
-    
-    doc.addEventListener('touchend', (e) => {
-      if (e.changedTouches.length !== 1) return;
-      const endX = e.changedTouches[0].clientX;
-      const endY = e.changedTouches[0].clientY;
-      const dx = endX - touchStartX;
-      const dy = endY - touchStartY;
-      const dt = Date.now() - touchStartTime;
-      const absDx = Math.abs(dx);
-      const absDy = Math.abs(dy);
-      
-      // Horizontal swipe for page turn (lower threshold for better response)
-      if (!isVerticalSwipe && dt < 400 && absDx > 40 && absDx > absDy * 1.2) {
-        e.preventDefault();
-        const now = Date.now();
-        if (now - lastSwipeTime < 280) return;
-        lastSwipeTime = now;
-        
-        if (dx < 0) {
-          flashArrow('right');
-          rendition.next().catch(() => showToast('📖 End of book'));
-        } else {
-          flashArrow('left');
-          rendition.prev().catch(() => showToast('📖 Beginning of book'));
-        }
-        return;
-      }
-      
-      // Tap to toggle header (quick tap on text area, ignore interactive elements)
-      if (dt < 250 && absDx < 20 && absDy < 20 && !isVerticalSwipe) {
-        const targetTag = e.target?.tagName?.toUpperCase();
-        // Do not toggle if tapping on links, buttons, inputs, or selectable interactive elements
-        if (!['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(targetTag)) {
-          e.preventDefault();
-          toggleHeader();
-        }
-      }
-    }, { passive: false });
-    
-    // Prevent context menu
-    doc.addEventListener('contextmenu', (e) => e.preventDefault());
-    
-    // Store reference for dictionary
-    if (contents.window) currentContentWindow = contents.window;
-  });
-}
-
-function flashArrow(side) {
-  const el = $(side === 'left' ? 'arrowLeft' : 'arrowRight');
-  if (el) {
-    el.style.opacity = '1';
-    clearTimeout(el._t);
-    el._t = setTimeout(() => el.style.opacity = '0', 280);
-  }
-}
-
-// ---------- Progress ----------
-function updateProgress(location) {
-  if (!book?.locations) return;
-  try {
-    const cur = book.locations.locationFromCfi(location.start.cfi);
-    const total = book.locations.total;
-    if (cur !== undefined && total && total > 0) {
-      pageInfo.innerText = `📄 ${cur}/${total}`;
-      progressBar.style.width = Math.min(100, (cur / total) * 100) + '%';
-    }
-  } catch(e) {}
-}
-
-// ---------- TOC (nested working) ----------
-function buildTOC() {
-  const container = $('tocContent');
-  if (!container) return;
-  container.innerHTML = '<div style="text-align:center;padding:20px;"><div class="spinner"></div><br>Loading...</div>';
-  if (!book?.navigation) {
-    container.innerHTML = '<p style="color:gray;text-align:center;padding:20px;">No navigation data.</p>';
-    return;
-  }
-  book.loaded.navigation.then(nav => {
-    container.innerHTML = '';
-    if (!nav.toc?.length) {
-      container.innerHTML = '<p style="color:gray;text-align:center;padding:20px;">No table of contents.</p>';
-      return;
-    }
-    function renderToc(items, parent, depth = 0) {
-      items.forEach(item => {
-        const row = document.createElement('div');
-        row.className = 'toc-row';
-        row.style.paddingLeft = (8 + depth * 18) + 'px';
-        const label = document.createElement('span');
-        label.className = 'toc-label';
-        label.textContent = item.label || 'Untitled';
-        const hasChildren = item.subitems?.length > 0;
-        if (hasChildren) {
-          const expandBtn = document.createElement('button');
-          expandBtn.className = 'toc-expand-btn';
-          expandBtn.textContent = '▶';
-          expandBtn.onclick = (e) => {
-            e.stopPropagation();
-            const childrenDiv = row.nextElementSibling;
-            if (childrenDiv?.classList) {
-              childrenDiv.classList.toggle('open');
-              expandBtn.textContent = childrenDiv.classList.contains('open') ? '▼' : '▶';
-            }
-          };
-          row.appendChild(expandBtn);
-          row.appendChild(label);
-          parent.appendChild(row);
-          const childrenDiv = document.createElement('div');
-          childrenDiv.className = 'toc-children';
-          renderToc(item.subitems, childrenDiv, depth + 1);
-          parent.appendChild(childrenDiv);
-        } else {
-          row.appendChild(label);
-          parent.appendChild(row);
-          row.onclick = () => {
-            if (item.href) {
-              rendition.display(item.href).then(() => { closeAllPanels(); showToast('📍 Jumped'); }).catch(() => showToast('Error'));
-            }
-          };
-        }
-      });
-    }
-    renderToc(nav.toc, container, 0);
-  }).catch(() => container.innerHTML = '<p style="color:#b91c1c;text-align:center;">Error loading TOC</p>');
-}
-
-// ---------- SEARCH ----------
-function hideSearch() {
-  $('searchResults').classList.remove('visible');
-  $('searchBackdrop').classList.remove('visible');
-}
-$('closeSearchBtn').onclick = hideSearch;
-$('searchBackdrop').onclick = hideSearch;
-$('searchBtn').onclick = doSearch;
-$('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
-
-async function doSearch() {
-  const query = $('searchInput').value.trim();
-  if (!query) { showToast('Enter a term'); return; }
-  if (!book) { showToast('Open a book first'); return; }
-  
-  const resultsDiv = $('searchResults');
-  const searchList = $('searchList');
-  const countSpan = $('searchCount');
-  searchList.innerHTML = '<div style="text-align:center;padding:30px;"><div class="spinner"></div><br>Searching...</div>';
-  resultsDiv.classList.add('visible');
-  $('searchBackdrop').classList.add('visible');
-  countSpan.innerText = '🔍 Searching...';
-  
-  try {
-    const spine = book.spine?.spineItems || [];
-    let allResults = [];
-    for (const item of spine) {
-      try {
-        await item.load(book.load.bind(book));
-        if (typeof item.find === 'function') {
-          const found = await item.find(query);
-          if (found?.length) {
-            allResults.push(...found.map(r => ({ cfi: r.cfi, excerpt: r.excerpt || '', label: item.label || 'Section' })));
-          }
-        }
-      } catch(e) { console.warn(e); }
-      finally { try { item.unload(); } catch(_) {} }
-    }
-    if (allResults.length === 0) {
-      searchList.innerHTML = `<div style="padding:30px;text-align:center;color:gray;">😕 No matches for "${query}"</div>`;
-      countSpan.innerText = '🔍 0 results';
-      return;
-    }
-    countSpan.innerText = `🔍 ${allResults.length} result${allResults.length !== 1 ? 's' : ''}`;
-    searchList.innerHTML = '';
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    allResults.forEach(res => {
-      const div = document.createElement('div');
-      div.className = 'result-item';
-      const excerpt = res.excerpt.length > 300 ? res.excerpt.slice(0, 300) + '…' : res.excerpt;
-      const highlighted = excerpt.replace(regex, '<mark>$1</mark>');
-      div.innerHTML = `<div style="font-size:12px;color:#64748b;margin-bottom:4px;">📍 ${res.label}</div><div class="result-excerpt">…${highlighted}…</div>`;
-      div.onclick = async () => { try { await rendition.display(res.cfi); hideSearch(); showToast('📍 Jumped'); } catch(e) { showToast('Error'); } };
-      searchList.appendChild(div);
-    });
-  } catch(err) {
-    console.error(err);
-    searchList.innerHTML = '<div style="padding:30px;text-align:center;color:#b91c1c;">⚠️ Search failed. Try simpler term.</div>';
-    countSpan.innerText = '🔍 Error';
-  }
-}
-
-// ---------- DICTIONARY ----------
-async function lookupWord(word) {
-  if (!word || word.length < 2) return null;
-  const cleanWord = word.replace(/[^\w'-]/g, '').toLowerCase();
-  if (cleanWord.length < 2) return null;
-  try {
-    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord)}`, { mode: 'cors', cache: 'force-cache' });
-    if (res.ok) { const data = await res.json(); if (data?.length) return data[0]; }
-  } catch(e) { console.warn(e); }
-  return null;
-}
-
-function getSelectedTextFromBook() {
-  if (!rendition) return '';
-  try {
-    const iframe = document.querySelector('#viewer iframe');
-    if (iframe?.contentWindow) {
-      const sel = iframe.contentWindow.getSelection();
-      return sel?.toString()?.trim() || '';
-    }
-    if (currentContentWindow) {
-      const sel = currentContentWindow.getSelection();
-      return sel?.toString()?.trim() || '';
-    }
-  } catch(e) { return ''; }
-  return '';
-}
-
-$('dictionaryBtn').onclick = async () => {
-  let selected = getSelectedTextFromBook();
-  if (!selected || selected.length < 2) {
-    if (window._lastSelectedWord) selected = window._lastSelectedWord;
-    else { showToast('Select a word first (long-press or double-tap text)'); return; }
-  }
-  const word = selected.split(/\s+/)[0].replace(/[^\w'-]/g, '');
-  if (word.length < 2) { showToast('Invalid selection'); return; }
-  const popup = $('dictPopup');
-  const content = $('dictContent');
-  content.innerHTML = '<div class="spinner" style="margin:20px auto;"></div><div>Looking up "' + word + '"...</div>';
-  popup.classList.add('open');
-  try {
-    const entry = await lookupWord(word);
-    if (!entry) {
-      content.innerHTML = `<p style="color:#b91c1c;text-align:center;">⚠️ No definition found for "<strong>${word}</strong>"</p>`;
-      return;
-    }
-    let html = `<div class="dict-word">📖 ${entry.word}</div>`;
-    if (entry.phonetic) html += `<div style="color:#2563eb;">/${entry.phonetic}/</div>`;
-    if (entry.meanings?.length) {
-      entry.meanings.slice(0, 3).forEach(m => {
-        html += `<div style="margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0;"><strong style="color:#2563eb;">${m.partOfSpeech}</strong></div>`;
-        m.definitions.slice(0, 3).forEach((d, i) => {
-          html += `<div class="dict-def"><strong>${i+1}.</strong> ${d.definition}</div>`;
-          if (d.example) html += `<div style="font-style:italic;color:#64748b;margin-left:20px;">"${d.example}"</div>`;
+  // Sorting
+  function sortTasks(taskArray) {
+    const sorted = [...taskArray];
+    switch(currentSort) {
+      case 'name':
+        sorted.sort((a,b) => a.title.localeCompare(b.title));
+        break;
+      case 'created':
+        sorted.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+        break;
+      case 'due':
+        sorted.sort((a,b) => {
+          let da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+          let db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+          return da - db;
         });
-        if (m.synonyms?.length) html += `<div style="font-size:13px;color:#64748b;margin-top:8px;">Synonyms: ${m.synonyms.slice(0,5).join(', ')}</div>`;
-      });
+        break;
+      default: sorted.sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
     }
-    content.innerHTML = html;
-  } catch(e) { content.innerHTML = `<p style="color:#b91c1c;">⚠️ Error loading definition</p>`; }
-};
-$('closeDictBtn').onclick = () => $('dictPopup').classList.remove('open');
-
-// Sheet drag to close
-const dictSheet = $('dictPopup');
-let dictStartY = 0, dictStartScroll = 0;
-dictSheet.addEventListener('touchstart', (e) => { if (e.touches.length === 1) { dictStartY = e.touches[0].clientY; dictStartScroll = dictSheet.scrollTop; } }, { passive: true });
-dictSheet.addEventListener('touchend', (e) => {
-  if (e.changedTouches.length === 1) {
-    const endY = e.changedTouches[0].clientY;
-    if (endY - dictStartY > 70 && dictStartScroll === 0) $('dictPopup').classList.remove('open');
+    return sorted;
   }
-});
 
-// ---------- BOOKMARKS ----------
-$('addBookmarkBtn').onclick = () => {
-  if (!rendition || !currentBookKey) { showToast('Open a book first'); return; }
-  const loc = rendition.currentLocation();
-  if (!loc?.start?.cfi) { showToast('Cannot bookmark'); return; }
-  const cfi = loc.start.cfi;
-  let bm = [];
-  try { bm = JSON.parse(localStorage.getItem(currentBookKey) || '[]'); } catch(e) { bm = []; }
-  if (!bm.includes(cfi)) {
-    bm.push(cfi);
-    localStorage.setItem(currentBookKey, JSON.stringify(bm));
-    updateBookmarkPanel();
-    showToast('📌 Bookmark added');
-  } else showToast('Already bookmarked');
-};
-$('bookmarkPanelBtn').onclick = () => { updateBookmarkPanel(); openPanel('bookmarkPanel'); };
+  function getFilteredTasks() {
+    let filtered = [...tasks];
+    if (currentView.type === "smart") {
+      if (currentView.value === "important") filtered = filtered.filter(t => t.important);
+      else if (currentView.value === "planned") filtered = filtered.filter(t => t.dueDate);
+    } else if (currentView.type === "list") {
+      filtered = filtered.filter(t => t.listId === currentView.id);
+    }
+    return sortTasks(filtered);
+  }
 
-function updateBookmarkPanel() {
-  const container = $('bookmarkContent');
-  let bm = [];
-  try { bm = JSON.parse(localStorage.getItem(currentBookKey) || '[]'); } catch(e) { bm = []; }
-  container.innerHTML = '';
-  if (!bm.length) { container.innerHTML = '<p style="color:gray;text-align:center;padding:20px;">No bookmarks yet.<br>Tap 🔖+ while reading.</p>'; return; }
-  bm.forEach((cfi, idx) => {
-    const row = document.createElement('div');
-    row.className = 'bm-row';
-    row.innerHTML = `<span class="bm-label">🔖 Bookmark ${idx+1}</span><button class="bm-del" type="button">✕</button>`;
-    row.querySelector('.bm-label').onclick = (e) => { e.stopPropagation(); rendition.display(cfi).then(() => closeAllPanels()).catch(() => showToast('Error')); };
-    row.querySelector('.bm-del').onclick = (e) => { e.stopPropagation(); let arr = JSON.parse(localStorage.getItem(currentBookKey) || '[]'); arr = arr.filter(c => c !== cfi); localStorage.setItem(currentBookKey, JSON.stringify(arr)); updateBookmarkPanel(); showToast('🗑️ Removed'); };
-    container.appendChild(row);
+  // Recurrence helpers
+  function computeNextDate(fromDate, recurrence) {
+    if (!recurrence || recurrence.period === "none") return null;
+    let date = new Date(fromDate);
+    if (isNaN(date.getTime())) date = new Date();
+    const interval = recurrence.interval || 1;
+    switch(recurrence.period) {
+      case 'day': date.setDate(date.getDate() + interval); break;
+      case 'week': date.setDate(date.getDate() + (interval * 7)); break;
+      case 'month': date.setMonth(date.getMonth() + interval); break;
+      case 'year': date.setFullYear(date.getFullYear() + interval); break;
+      default: return null;
+    }
+    return date;
+  }
+
+  function createRecurringCopy(originalTask) {
+    if (!originalTask.recurrence || originalTask.recurrence.period === "none") return null;
+    let newDue = null, newReminder = null;
+    if (originalTask.dueDate) {
+      newDue = computeNextDate(originalTask.dueDate, originalTask.recurrence);
+      if (newDue) newDue = newDue.toISOString();
+    }
+    if (originalTask.reminderTime) {
+      newReminder = computeNextDate(originalTask.reminderTime, originalTask.recurrence);
+      if (newReminder) newReminder = newReminder.toISOString();
+    }
+    return {
+      id: Date.now() + "-" + Math.random().toString(36),
+      title: originalTask.title,
+      completed: false,
+      important: originalTask.important,
+      dueDate: newDue,
+      reminderTime: newReminder,
+      notified: false,
+      listId: originalTask.listId,
+      recurrence: { ...originalTask.recurrence },
+      createdAt: Date.now()
+    };
+  }
+
+  function renderSidebar() {
+    const container = document.getElementById("customListsContainer");
+    container.innerHTML = "";
+    lists.forEach(list => {
+      if (list.id === "default_inbox") return;
+      const div = document.createElement("div");
+      div.className = "custom-list-item";
+      if (currentView.type === "list" && currentView.id === list.id) div.style.background = "var(--nav-active-bg)";
+      const nameSpan = document.createElement("span");
+      nameSpan.innerHTML = `<i class="fas fa-list-ul"></i><span class="list-name-text" data-list-id="${list.id}">${escapeHtml(list.name)}</span>`;
+      const delBtn = document.createElement("button");
+      delBtn.className = "delete-list";
+      delBtn.setAttribute("data-id", list.id);
+      delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+      div.appendChild(nameSpan);
+      div.appendChild(delBtn);
+      
+      // Edit list name on click
+      const nameText = nameSpan.querySelector('.list-name-text');
+      nameText.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const oldName = list.name;
+        const input = document.createElement('input');
+        input.value = oldName;
+        input.style.width = '120px';
+        input.style.background = 'var(--card-bg)';
+        input.style.color = 'var(--text-primary)';
+        input.style.border = '1px solid var(--input-border)';
+        input.style.borderRadius = '8px';
+        input.style.padding = '4px 8px';
+        nameText.replaceWith(input);
+        input.focus();
+        const saveEdit = () => {
+          const newName = input.value.trim();
+          if(newName && newName !== oldName) {
+            list.name = newName;
+            saveData();
+            renderUI();
+            showToast(`List renamed to "${newName}"`);
+          } else if(!newName) showToast("Name cannot be empty");
+          else renderUI();
+        };
+        input.addEventListener('blur', saveEdit);
+        input.addEventListener('keypress', (e) => { if(e.key === 'Enter') saveEdit(); });
+      });
+      
+      div.addEventListener("click", (e) => { 
+        if(!e.target.closest(".delete-list") && !e.target.closest('.list-name-text') && e.target !== input) { 
+          currentView = { type: "list", id: list.id }; 
+          renderUI();
+          hideSidebarAndShowBack();
+        } 
+      });
+      delBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if(confirm(`Delete "${list.name}"? Tasks move to Inbox`)) {
+          tasks = tasks.map(t => t.listId === list.id ? { ...t, listId: "default_inbox" } : t);
+          lists = lists.filter(l => l.id !== list.id);
+          if(currentView.type==="list" && currentView.id===list.id) currentView = { type: "smart", value: "all" };
+          saveData(); renderUI(); showToast(`"${list.name}" deleted`);
+          if (currentView.type === "smart") hideSidebarAndShowBack();
+        }
+      });
+      container.appendChild(div);
+    });
+    document.querySelectorAll(".nav-item").forEach(el => {
+      const view = el.getAttribute("data-view");
+      if (currentView.type === "smart" && currentView.value === view) el.classList.add("active");
+      else el.classList.remove("active");
+    });
+  }
+
+  function renderTasks() {
+    const container = document.getElementById("tasksContainer");
+    const filtered = getFilteredTasks();
+    const remaining = filtered.filter(t => !t.completed).length;
+    document.getElementById("taskCount").innerText = `${filtered.length} task${filtered.length!==1?'s':''} · ${remaining} remaining`;
+    if(filtered.length===0) { container.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle" style="font-size:32px; opacity:0.4"></i><p>No tasks. Add one below ✨</p></div>`; return; }
+    container.innerHTML = filtered.map(task => `
+      <div class="task-card ${task.completed ? 'completed-task' : ''}" data-id="${task.id}">
+        <input type="checkbox" class="task-check" ${task.completed ? 'checked' : ''} data-id="${task.id}">
+        <div class="task-info">
+          <div class="task-title">
+            <span>${escapeHtml(task.title)}</span>
+            ${task.important ? '<i class="fas fa-star important-star" data-id="'+task.id+'"></i>' : '<i class="far fa-star important-star" data-id="'+task.id+'"></i>'}
+            ${task.recurrence && task.recurrence.period !== 'none' ? `<span class="badge"><i class="fas fa-sync-alt"></i> ${task.recurrence.period}${task.recurrence.interval>1 ? ` ${task.recurrence.interval}` : ''}</span>` : ''}
+          </div>
+          <div class="task-meta">
+            ${task.dueDate ? `<span class="badge"><i class="far fa-calendar-alt"></i> ${formatDate(task.dueDate)}</span>` : ''}
+            ${task.reminderTime ? `<span class="badge"><i class="far fa-bell"></i> ${formatDateTime(task.reminderTime)}</span>` : ''}
+          </div>
+        </div>
+        <div class="task-actions">
+          <i class="far fa-edit" data-action="edit" data-id="${task.id}"></i>
+          <i class="far fa-trash-alt" data-action="delete" data-id="${task.id}"></i>
+        </div>
+      </div>
+    `).join('');
+    // attach events
+    document.querySelectorAll('.task-check').forEach(cb => cb.addEventListener('change', (e) => handleTaskComplete(cb.getAttribute('data-id'), cb.checked)));
+    document.querySelectorAll('.important-star').forEach(star => star.addEventListener('click', (e) => { let tid=star.getAttribute('data-id'); let t=tasks.find(x=>x.id===tid); if(t){t.important=!t.important; saveData(); renderUI(); showToast(t.important?'Marked important':'Removed important');}}));
+    document.querySelectorAll('[data-action="edit"]').forEach(btn => btn.addEventListener('click', (e) => openEditModal(btn.getAttribute('data-id'))));
+    document.querySelectorAll('[data-action="delete"]').forEach(btn => btn.addEventListener('click', (e) => { if(confirm('Delete task?')){ tasks=tasks.filter(t=>t.id!==btn.getAttribute('data-id')); saveData(); renderUI(); showToast('Deleted');}}));
+  }
+
+  function handleTaskComplete(taskId, isChecked) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    if (isChecked && !task.completed) {
+      if (task.recurrence && task.recurrence.period !== 'none') {
+        const nextTask = createRecurringCopy(task);
+        if (nextTask) { tasks.push(nextTask); showToast(`Next recurrence created`); }
+        task.recurrence = null;
+      }
+      task.completed = true;
+    } else if (!isChecked && task.completed) {
+      task.completed = false;
+    }
+    saveData();
+    renderUI();
+  }
+
+  function openEditModal(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if(!task) return;
+    editingTaskId = taskId;
+    document.getElementById("taskTitleInput").value = task.title;
+    document.getElementById("dueDateInput").value = task.dueDate ? task.dueDate.slice(0,16) : '';
+    document.getElementById("reminderTimeInput").value = task.reminderTime ? task.reminderTime.slice(0,16) : '';
+    document.getElementById("importantCheckbox").checked = task.important;
+    let interval = 1, period = "none";
+    if(task.recurrence) { interval = task.recurrence.interval || 1; period = task.recurrence.period; }
+    document.getElementById("repeatInterval").value = interval;
+    document.getElementById("repeatPeriod").value = period;
+    document.getElementById("modalOverlay").classList.add("active");
+  }
+  function closeModal() { document.getElementById("modalOverlay").classList.remove("active"); editingTaskId=null; }
+  function saveModal() {
+    if(!editingTaskId) return;
+    const newTitle = document.getElementById("taskTitleInput").value.trim();
+    if(!newTitle) { showToast("Title required"); return; }
+    const task = tasks.find(t => t.id === editingTaskId);
+    if(task) {
+      task.title = newTitle;
+      task.dueDate = document.getElementById("dueDateInput").value ? new Date(document.getElementById("dueDateInput").value).toISOString() : null;
+      task.reminderTime = document.getElementById("reminderTimeInput").value ? new Date(document.getElementById("reminderTimeInput").value).toISOString() : null;
+      task.important = document.getElementById("importantCheckbox").checked;
+      const interval = parseInt(document.getElementById("repeatInterval").value,10);
+      const period = document.getElementById("repeatPeriod").value;
+      if(period !== "none") task.recurrence = { interval: interval || 1, period: period };
+      else task.recurrence = null;
+      saveData();
+      renderUI();
+      showToast("Task updated");
+    }
+    closeModal();
+  }
+
+  function addTask(title, listId=null) {
+    if(!title.trim()) return false;
+    let target = listId || (currentView.type==="list" ? currentView.id : "default_inbox");
+    const newTask = {
+      id: Date.now()+'-'+Math.random().toString(36),
+      title: title.trim(), completed: false, important: false, dueDate: null, reminderTime: null, notified: false, listId: target, recurrence: null, createdAt: Date.now()
+    };
+    tasks.unshift(newTask);
+    saveData(); renderUI(); return true;
+  }
+
+  function formatDate(iso) { if(!iso) return ''; const d=new Date(iso); const today=new Date(); today.setHours(0,0,0,0); const target=new Date(d); target.setHours(0,0,0,0); const diff=(target-today)/86400000; if(diff===0) return 'Today'; if(diff===1) return 'Tomorrow'; return target.toLocaleDateString(); }
+  function formatDateTime(iso) { if(!iso) return ''; return new Date(iso).toLocaleString(undefined, {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}); }
+  function showToast(msg) { const t=document.getElementById("toastMsg"); t.innerText=msg; t.style.opacity='1'; setTimeout(()=>t.style.opacity='0',2300); }
+  function escapeHtml(str) { return str.replace(/[&<>]/g, m=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+
+  function renderUI() {
+    let title="";
+    if(currentView.type==="smart") title=currentView.value==="all"?"All Tasks":currentView.value==="important"?"Important":"Planned";
+    else title=lists.find(l=>l.id===currentView.id)?.name||"Inbox";
+    document.getElementById("viewTitle").innerText = title;
+    renderSidebar();
+    renderTasks();
+  }
+
+  let isSidebarVisible = true;
+  function setSidebarVisible(visible) {
+    isSidebarVisible = visible;
+    if (visible) document.body.classList.remove("sidebar-hidden");
+    else document.body.classList.add("sidebar-hidden");
+  }
+  function hideSidebarAndShowBack() { setSidebarVisible(false); }
+  function showSidebar() { setSidebarVisible(true); }
+
+  function initDarkMode() { const saved=localStorage.getItem('darkMode'); if(saved==='true') document.body.classList.add('dark'); else document.body.classList.remove('dark'); }
+  function toggleDarkMode() { document.body.classList.toggle('dark'); localStorage.setItem('darkMode', document.body.classList.contains('dark')); const meta=document.getElementById('themeColorMeta'); if(meta) meta.setAttribute('content', document.body.classList.contains('dark')?'#1e1e2e':'#ffffff'); }
+
+  function requestNotificationPermission() { if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); }
+  function checkReminders() { if(!("Notification" in window)) return; const now=new Date(); tasks.forEach(t=>{ if(t.reminderTime && !t.notified && !t.completed && new Date(t.reminderTime)<=now) { t.notified=true; if(Notification.permission==="granted") new Notification("⏰ Reminder",{body:`"${t.title}" is due!`}); else showToast(`Reminder: ${t.title}`); saveData(); renderUI(); } }); }
+
+  // Event listeners
+  document.getElementById("addTaskBtn").addEventListener("click",()=>{ const inp=document.getElementById("newTaskInput"); if(inp.value.trim()) addTask(inp.value); inp.value=""; });
+  document.getElementById("addIconBtn").addEventListener("click",()=>{ const inp=document.getElementById("newTaskInput"); if(inp.value.trim()) addTask(inp.value); inp.value=""; });
+  document.getElementById("newTaskInput").addEventListener("keypress",e=>{if(e.key==="Enter") document.getElementById("addTaskBtn").click();});
+  
+  document.querySelectorAll(".nav-item").forEach(el=>{
+    el.addEventListener("click",()=>{
+      const v=el.getAttribute("data-view");
+      if(v) currentView={type:"smart",value:v};
+      renderUI();
+      hideSidebarAndShowBack();
+    });
   });
-}
+  document.getElementById("addListBtn").addEventListener("click",()=>{ let name=prompt("List name:"); if(name?.trim()){ const id="list_"+Date.now(); lists.push({id,name:name.trim()}); saveData(); renderUI(); currentView={type:"list",id}; renderUI(); hideSidebarAndShowBack(); showToast(`"${name}" created`); }});
+  document.getElementById("modalCancelBtn").addEventListener("click",closeModal);
+  document.getElementById("modalSaveBtn").addEventListener("click",saveModal);
+  document.getElementById("darkModeSidebarBtn").addEventListener("click",toggleDarkMode);
+  document.getElementById("closeSidebarBtn").addEventListener("click", () => setSidebarVisible(false));
+  document.getElementById("backNavBtn").addEventListener("click", () => setSidebarVisible(true));
+  document.getElementById("modalOverlay").addEventListener("click",e=>{if(e.target===document.getElementById("modalOverlay")) closeModal();});
+  
+  // Sort menu
+  const menuBtn = document.getElementById("menuDotsBtn");
+  const sortMenu = document.getElementById("sortMenu");
+  menuBtn.addEventListener("click", (e) => { e.stopPropagation(); sortMenu.classList.toggle("show"); });
+  document.addEventListener("click", () => sortMenu.classList.remove("show"));
+  document.querySelectorAll("[data-sort]").forEach(el => {
+    el.addEventListener("click", (e) => { currentSort = el.getAttribute("data-sort"); renderUI(); sortMenu.classList.remove("show"); showToast(`Sorted by ${currentSort}`); });
+  });
 
-// Font & nav
-$('fontPlus').onclick = () => { if (rendition) { currentFont = Math.min(currentFont + 10, 220); rendition.themes.fontSize(currentFont + '%'); localStorage.setItem('epub-font-size', currentFont); showToast(`${currentFont}%`); } };
-$('fontMinus').onclick = () => { if (rendition) { currentFont = Math.max(currentFont - 10, 70); rendition.themes.fontSize(currentFont + '%'); localStorage.setItem('epub-font-size', currentFont); showToast(`${currentFont}%`); } };
-$('prev').onclick = () => { if (rendition) { flashArrow('left'); rendition.prev().catch(() => showToast('Start')); } };
-$('next').onclick = () => { if (rendition) { flashArrow('right'); rendition.next().catch(() => showToast('End')); } };
-document.addEventListener('keydown', (e) => { if (!rendition) return; if (e.key === 'ArrowLeft') { e.preventDefault(); flashArrow('left'); rendition.prev(); } if (e.key === 'ArrowRight') { e.preventDefault(); flashArrow('right'); rendition.next(); } if (e.key === 'Escape') { closeAllPanels(); hideSearch(); $('dictPopup').classList.remove('open'); } });
-
-// Load EPUB
-async function loadEpubFile(file) {
-  showLoading('Opening book...');
-  bookLoaded = false;
-  if (rendition) { try { rendition.destroy(); } catch(_) {} rendition = null; }
-  if (book) { try { book.destroy(); } catch(_) {} book = null; }
-  try {
-    book = ePub(file);
-    rendition = book.renderTo('viewer', { width: '100%', height: '100%', allowScriptedContent: false, snap: true, flow: 'paginated' });
-    rendition.themes.register('light', { body: { background: '#fff', color: '#1e293b', 'line-height': '1.6' } });
-    rendition.themes.register('dark', { body: { background: '#0f172a', color: '#e2e8f0', 'line-height': '1.6' } });
-    rendition.themes.register('sepia', { body: { background: '#fef7e0', color: '#5e3a1c', 'line-height': '1.6' } });
-    rendition.themes.select(currentTheme);
-    rendition.themes.fontSize(currentFont + '%');
-    setupGestures();
-    rendition.on('relocated', updateProgress);
-    await rendition.display();
-    book.locations.generate(1800).catch(() => {});
-    buildTOC();
-    const meta = await book.loaded.metadata;
-    currentBookKey = 'epub-bm-' + (meta?.identifier?.replace(/[^\w-]/g, '_') || file.name.replace(/[^\w.-]/g, '_'));
-    updateBookmarkPanel();
-    bookLoaded = true;
-    hideLoading();
-    showToast('✅ eBookSwan ready! Swipe ← →, tap text to toggle menu');
-  } catch(err) { hideLoading(); showToast('❌ Failed: ' + (err.message || 'Unknown')); }
-}
-$('fileInput').addEventListener('change', async (e) => { if (e.target.files[0]) { await loadEpubFile(e.target.files[0]); e.target.value = ''; } });
-
-// PWA Install
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; $('installBtn').style.display = 'flex'; });
-$('installBtn')?.addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') showToast('✅ Installed!'); $('installBtn').style.display = 'none'; deferredPrompt = null; } });
-
-$('tocBtn').onclick = () => { buildTOC(); openPanel('tocPanel'); };
-
-// Fix rotation & resize: re-apply theme, resize rendition, and re-trigger header layout
-window.addEventListener('resize', () => { 
-  if (rendition) {
-    setTimeout(() => {
-      rendition.resize();
-      if (currentTheme) rendition.themes.select(currentTheme);
-      rendition.themes.fontSize(currentFont + '%');
-    }, 50);
-  }
-  // ensure header interactive after orientation change
-  setTimeout(() => {
-    if (headerWrap && headerVisible) headerWrap.classList.remove('hidden');
-  }, 100);
-});
-hideLoading();
-showToast('✨ eBookSwan ready — swipe pages, tap text to toggle menu');
-if (!localStorage.getItem('epub-hint-shown')) { setTimeout(() => showToast('💡 Tip: long-press a word, then tap "Define"'), 3500); localStorage.setItem('epub-hint-shown', 'true'); }
+  loadData(); initDarkMode(); requestNotificationPermission(); renderUI(); setSidebarVisible(true);
+  setInterval(checkReminders,30000); checkReminders();
+  if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(e=>console.log(e)));
 </script>
 </body>
 </html>
