@@ -864,12 +864,12 @@
       font-family: inherit;
     }
 
-    /* Date/Time Picker Accent Color Override */
+    /* Date/Time Picker Accent Color Override - Force theme color */
     input[type="datetime-local"],
     input[type="date"],
     input[type="time"] {
       accent-color: var(--accent-color);
-      color-scheme: inherit;
+      color-scheme: light dark;
     }
     input[type="datetime-local"]:focus,
     input[type="date"]:focus,
@@ -878,12 +878,19 @@
       border-color: var(--accent-color) !important;
       box-shadow: 0 0 0 3px rgba(192, 70, 87, 0.2);
     }
+    /* Style the calendar picker icon to match theme (webkit only) */
     input[type="datetime-local"]::-webkit-calendar-picker-indicator,
     input[type="date"]::-webkit-calendar-picker-indicator,
     input[type="time"]::-webkit-calendar-picker-indicator {
+      filter: invert(27%) sepia(81%) saturate(1846%) hue-rotate(332deg) brightness(92%) contrast(91%);
       cursor: pointer;
       opacity: 0.8;
       transition: opacity 0.2s;
+    }
+    body.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+    body.dark input[type="date"]::-webkit-calendar-picker-indicator,
+    body.dark input[type="time"]::-webkit-calendar-picker-indicator {
+      filter: invert(86%) sepia(19%) saturate(1073%) hue-rotate(314deg) brightness(97%) contrast(94%);
     }
     input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
     input[type="date"]::-webkit-calendar-picker-indicator:hover,
@@ -1216,7 +1223,7 @@
 
 <script>
   // ---------- IST TIMEZONE HELPERS (UTC+5:30) ----------
-  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
   function getCurrentIST() {
     const now = new Date();
@@ -1228,15 +1235,12 @@
     if (!isoString) return null;
     const utcDate = new Date(isoString);
     if (isNaN(utcDate.getTime())) return null;
-    const istTime = utcDate.getTime() + IST_OFFSET_MS;
-    return new Date(istTime);
+    return new Date(utcDate.getTime() + IST_OFFSET_MS);
   }
 
   function toUTCFromIST(istDate) {
     if (!istDate) return null;
-    const istTime = istDate.getTime();
-    const utcTime = istTime - IST_OFFSET_MS;
-    return new Date(utcTime).toISOString();
+    return new Date(istDate.getTime() - IST_OFFSET_MS).toISOString();
   }
 
   function formatDateTimeIST(isoString) {
@@ -1258,8 +1262,7 @@
     if (!isoString) return false;
     const istDue = toISTDate(isoString);
     if (!istDue) return false;
-    const nowIST = getCurrentIST();
-    return istDue < nowIST;
+    return istDue < getCurrentIST();
   }
 
   function convertLocalToUTC(localDateTimeString) {
@@ -1298,13 +1301,28 @@
     syncTasksToServiceWorker();
   }
   
-  // PWA BADGE MANAGEMENT
+  // Badge shows number of incomplete tasks that are either overdue or have a passed reminder time
   async function updateAppBadge() {
     if (!('setAppBadge' in navigator)) return;
     try {
-      const activeCount = tasks.filter(t => !t.completed).length;
-      if (activeCount > 0) {
-        await navigator.setAppBadge(activeCount);
+      const nowIST = getCurrentIST();
+      const count = tasks.filter(t => {
+        if (t.completed) return false;
+        let overdue = false;
+        let reminderPassed = false;
+        if (t.dueDate) {
+          const dueIST = toISTDate(t.dueDate);
+          if (dueIST && dueIST < nowIST) overdue = true;
+        }
+        if (t.reminderTime) {
+          const remIST = toISTDate(t.reminderTime);
+          if (remIST && remIST < nowIST) reminderPassed = true;
+        }
+        return overdue || reminderPassed;
+      }).length;
+      
+      if (count > 0) {
+        await navigator.setAppBadge(count);
       } else {
         await navigator.clearAppBadge();
       }
@@ -1313,10 +1331,10 @@
     }
   }
 
-  // Sync tasks with service worker for background checks
   async function syncTasksToServiceWorker() {
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage({ type: 'SYNC_TASKS', tasks: tasks });
+      updateAppBadge();
     }
   }
 
@@ -1338,20 +1356,6 @@
         showToast("Notification permission denied");
       }
     });
-  }
-
-  // Test notification (only works if permission granted)
-  function sendTestNotification() {
-    if (Notification.permission !== "granted") {
-      requestNotificationPermission();
-      return;
-    }
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({ type: 'TEST_NOTIFICATION' });
-      showToast("Test notification sent (if permission granted)");
-    } else {
-      showToast("Service worker not ready yet");
-    }
   }
 
   function loadData() {
@@ -1782,7 +1786,6 @@
     updateThemeToggleIcon();
   }
 
-  // Visibility change handler: refresh badge & sync tasks when app comes to foreground
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
       updateAppBadge();
@@ -1839,7 +1842,7 @@
     if(task) {
       const value = document.getElementById("popupDueDate").value;
       task.dueDate = value ? convertLocalToUTC(value) : null;
-      task.notified = false; // Reset notification for new due date
+      task.notified = false;
       saveData(); renderUI(); openTaskDetail(currentDetailTaskId); closePopup(); showToast("Due date updated");
     }
   }
@@ -1956,7 +1959,6 @@
       if (event.data.type === 'NOTIFICATION_CLICK') {
         openTaskDetail(event.data.taskId);
       } else if (event.data.type === 'UPDATE_NOTIFIED') {
-        // Update notified flags from service worker (if needed)
         const updatedTasks = event.data.tasks;
         if (updatedTasks && updatedTasks.length) {
           tasks = tasks.map(t => {
@@ -1979,8 +1981,6 @@
   renderUI(); 
   setSidebarVisible(true);
   
-  // Request permission on first load? Better to let user click button.
-  // But if already granted, sync tasks.
   if (Notification.permission === 'granted') {
     setTimeout(() => syncTasksToServiceWorker(), 1000);
   }
