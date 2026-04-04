@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ffffff" id="themeColorMeta">
   <meta name="description" content="WorkSwan - minimalist task manager with lists, reminders, recurrence">
   <link rel="manifest" href="manifest.json">
-  <title>WorkSwan</title>
+  <title>WorkSwan · Task Manager</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -38,7 +38,7 @@
       --toast-bg: #1f1f1f;
       --toast-text: white;
       --shadow-sm: 0 1px 2px rgba(0,0,0,0.02);
-      --back-btn-bg: transparent;
+      --overlay-bg: rgba(0,0,0,0.3);
     }
 
     body.dark {
@@ -61,7 +61,7 @@
       --modal-bg: #2d2d30;
       --toast-bg: #e4e4e7;
       --toast-text: #1e1e2e;
-      --back-btn-bg: transparent;
+      --overlay-bg: rgba(0,0,0,0.5);
     }
 
     body {
@@ -80,7 +80,28 @@
       position: relative;
     }
 
-    /* ========= SIDEBAR with safe area bottom padding ========= */
+    /* Overlay for mobile sidebar collapse */
+    .sidebar-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--overlay-bg);
+      z-index: 5;
+      display: none;
+      backdrop-filter: blur(2px);
+    }
+    body.sidebar-hidden .sidebar-overlay {
+      display: none;
+    }
+    @media (max-width: 768px) {
+      body:not(.sidebar-hidden) .sidebar-overlay {
+        display: block;
+      }
+    }
+
+    /* ========= SIDEBAR ========= */
     .sidebar {
       width: 280px;
       background: var(--sidebar-bg);
@@ -189,7 +210,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 16px;
+      padding: 10px 12px;
       margin: 2px 0;
       border-radius: 12px;
       cursor: pointer;
@@ -197,18 +218,30 @@
     }
     .custom-list-item span {
       display: flex;
-      gap: 14px;
+      gap: 12px;
       align-items: center;
       font-size: 15px;
       font-weight: 450;
       flex: 1;
     }
     .list-name-text {
-      cursor: text;
-      padding: 2px 4px;
-      border-radius: 6px;
+      cursor: pointer;
+      flex: 1;
     }
-    .list-name-text:hover {
+    .edit-list-icon {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--icon-color);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+    .custom-list-item:hover .edit-list-icon {
+      opacity: 1;
+    }
+    .edit-list-icon:hover {
       background: var(--nav-hover);
     }
     .delete-list {
@@ -250,7 +283,7 @@
       font-size: 18px;
     }
 
-    /* MAIN CONTENT - with safe area bottom padding */
+    /* MAIN CONTENT */
     .main-content {
       flex: 1;
       display: flex;
@@ -278,7 +311,6 @@
       display: flex;
     }
 
-    /* header with title and menu */
     .view-header {
       display: flex;
       justify-content: space-between;
@@ -300,9 +332,6 @@
       padding: 8px;
       border-radius: 40px;
     }
-    .menu-dots:hover {
-      background: var(--nav-hover);
-    }
     .task-count {
       font-size: 14px;
       color: var(--text-muted);
@@ -310,15 +339,55 @@
       width: 100%;
     }
 
-    /* tasks container */
     .tasks-container {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
       margin-bottom: 24px;
     }
 
-    /* ADD TASK PANE (bottom) - safe area aware */
+    /* Minimal task card: checkbox + title + star */
+    .task-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .task-card:hover {
+      background: var(--nav-hover);
+    }
+    .task-check {
+      transform: scale(1.2);
+      cursor: pointer;
+      accent-color: #2d7aff;
+    }
+    .task-title {
+      flex: 1;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    .completed-task .task-title {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+    .important-star {
+      color: #ffb443;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+    }
+
+    /* ADD TASK PANE (bottom) */
     .add-task-pane {
       background: var(--card-bg);
       border: 1px solid var(--input-border);
@@ -332,7 +401,6 @@
       bottom: 0;
       background: var(--bg-app);
       backdrop-filter: blur(4px);
-      margin-bottom: 0;
     }
     .add-task-pane input {
       flex: 1;
@@ -360,121 +428,94 @@
       font-weight: 500;
     }
 
-    .task-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 18px;
-      padding: 14px 18px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-    .task-check {
-      transform: scale(1.2);
-      cursor: pointer;
-      accent-color: #2d7aff;
-    }
-    .task-title {
-      font-size: 15px;
-      font-weight: 500;
-      margin-bottom: 6px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-    }
-    .completed-task .task-title {
-      text-decoration: line-through;
-      color: var(--text-muted);
-    }
-    .task-meta {
-      display: flex;
-      gap: 12px;
-      font-size: 12px;
-      color: var(--text-muted);
-      flex-wrap: wrap;
-    }
-    .badge {
-      background: var(--badge-bg);
-      border-radius: 30px;
-      padding: 4px 12px;
-      font-size: 11px;
-      font-weight: 500;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .important-star {
-      color: #ffb443;
-      cursor: pointer;
-    }
-    .task-actions i {
-      cursor: pointer;
-      margin-left: 12px;
-      color: var(--icon-color);
-      font-size: 16px;
-    }
-    .empty-state {
-      text-align: center;
-      padding: 48px 20px;
-      color: var(--text-muted);
-    }
-
-    /* MODAL */
-    .modal-overlay {
+    /* TASK DETAIL MODAL (full page style) */
+    .detail-modal {
       position: fixed;
-      top:0;left:0;width:100%;height:100%;
-      background: rgba(0,0,0,0.5);
-      backdrop-filter: blur(2px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      visibility: hidden;
-      opacity: 0;
-      transition: 0.2s;
-    }
-    .modal-overlay.active {
-      visibility: visible;
-      opacity: 1;
-    }
-    .modal-card {
-      background: var(--modal-bg);
-      width: 90%;
-      max-width: 520px;
-      border-radius: 32px;
-      padding: 28px 26px;
-      color: var(--text-primary);
-    }
-    .modal-card input, .modal-card select {
+      top: 0;
+      left: 0;
       width: 100%;
-      padding: 12px 14px;
-      margin-bottom: 16px;
+      height: 100%;
+      background: var(--modal-bg);
+      z-index: 1000;
+      overflow-y: auto;
+      display: none;
+      flex-direction: column;
+      padding: 28px 24px calc(20px + env(safe-area-inset-bottom, 0px)) 24px;
+    }
+    .detail-modal.active {
+      display: flex;
+    }
+    .detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+    .detail-header h2 {
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .close-detail {
+      background: none;
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      color: var(--icon-color);
+    }
+    .detail-field {
+      margin-bottom: 28px;
+    }
+    .detail-field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .detail-field input, .detail-field select {
+      width: 100%;
+      padding: 14px;
       border: 1px solid var(--input-border);
       border-radius: 16px;
       background: var(--card-bg);
       color: var(--text-primary);
+      font-size: 16px;
       font-family: inherit;
+    }
+    .detail-title-input {
+      font-size: 24px;
+      font-weight: 600;
+      padding: 12px 0;
+      border: none;
+      border-bottom: 1px solid var(--input-border);
+      border-radius: 0;
+      background: transparent;
+    }
+    .detail-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .detail-checkbox label {
+      font-size: 16px;
+    }
+    .delete-task-btn {
+      background: none;
+      border: 1px solid #d13438;
+      color: #d13438;
+      padding: 12px;
+      border-radius: 40px;
+      width: 100%;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 20px;
     }
     .recurrence-group {
       display: flex;
       gap: 12px;
-      align-items: center;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
     }
-    .recurrence-group input, .recurrence-group select {
-      width: auto;
-      margin-bottom: 0;
-      flex: 1;
-    }
-    .modal-buttons {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      margin-top: 8px;
-    }
-    .btn-primary { background: #2d7aff; color: white; border: none; padding: 8px 24px; border-radius: 40px; cursor: pointer; font-weight: 500; }
+
     .toast-msg {
       position: fixed;
       bottom: calc(24px + env(safe-area-inset-bottom, 0px));
@@ -489,9 +530,7 @@
       opacity: 0;
       transition: 0.2s;
       pointer-events: none;
-      white-space: nowrap;
     }
-    /* sort dropdown */
     .sort-menu {
       position: absolute;
       top: 70px;
@@ -517,21 +556,14 @@
       background: var(--nav-hover);
     }
     @media (max-width: 680px) {
-      .main-content {
-        padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px)) 20px;
-      }
-      .sidebar { width: 260px; }
+      .main-content { padding: 20px; }
       .sort-menu { right: 20px; top: 65px; }
-      .toast-msg {
-        bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-        white-space: normal;
-        text-align: center;
-      }
     }
   </style>
 </head>
 <body>
 <div class="app">
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
   <div class="sidebar" id="sidebar">
     <div class="logo-area">
       <div class="logo-left">
@@ -567,14 +599,48 @@
       <div class="task-count" id="taskCount"></div>
     </div>
     <div class="tasks-container" id="tasksContainer"></div>
-    
-    <!-- Add task pane at bottom -->
     <div class="add-task-pane">
       <button class="add-icon-btn" id="addIconBtn"><i class="fas fa-plus-circle"></i></button>
       <input type="text" id="newTaskInput" placeholder="Add a task" autocomplete="off">
       <button class="add-text-btn" id="addTaskBtn">Add</button>
     </div>
   </div>
+</div>
+
+<!-- Task Detail Modal (full page style) -->
+<div id="taskDetailModal" class="detail-modal">
+  <div class="detail-header">
+    <h2>Task details</h2>
+    <button class="close-detail" id="closeDetailBtn"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="detail-field">
+    <input type="text" id="detailTitle" class="detail-title-input" placeholder="Task title">
+  </div>
+  <div class="detail-checkbox">
+    <input type="checkbox" id="detailImportant"> <label>Mark as important</label>
+  </div>
+  <div class="detail-field">
+    <label>Due date</label>
+    <input type="datetime-local" id="detailDueDate">
+  </div>
+  <div class="detail-field">
+    <label>Custom reminder</label>
+    <input type="datetime-local" id="detailReminder">
+  </div>
+  <div class="detail-field">
+    <label>Repeat</label>
+    <div class="recurrence-group">
+      <input type="number" id="detailRepeatInterval" min="1" max="99" value="1" style="flex:1">
+      <select id="detailRepeatPeriod" style="flex:2">
+        <option value="none">Never</option>
+        <option value="day">Day(s)</option>
+        <option value="week">Week(s)</option>
+        <option value="month">Month(s)</option>
+        <option value="year">Year(s)</option>
+      </select>
+    </div>
+  </div>
+  <button class="delete-task-btn" id="deleteTaskBtn">Delete task</button>
 </div>
 
 <!-- Sort dropdown -->
@@ -584,35 +650,6 @@
   <div data-sort="due">Sort by due date</div>
 </div>
 
-<!-- Modal -->
-<div id="modalOverlay" class="modal-overlay">
-  <div class="modal-card">
-    <h3 id="modalTitle">Edit task</h3>
-    <input type="text" id="taskTitleInput" placeholder="Task title">
-    <label>Due date</label>
-    <input type="datetime-local" id="dueDateInput">
-    <label>Custom reminder</label>
-    <input type="datetime-local" id="reminderTimeInput">
-    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px">
-      <input type="checkbox" id="importantCheckbox"> <label>Mark as Important</label>
-    </div>
-    <label>Repeat</label>
-    <div class="recurrence-group">
-      <input type="number" id="repeatInterval" min="1" max="99" value="1" style="width:80px">
-      <select id="repeatPeriod">
-        <option value="none">Never</option>
-        <option value="day">Day(s)</option>
-        <option value="week">Week(s)</option>
-        <option value="month">Month(s)</option>
-        <option value="year">Year(s)</option>
-      </select>
-    </div>
-    <div class="modal-buttons">
-      <button id="modalCancelBtn">Cancel</button>
-      <button id="modalSaveBtn" class="btn-primary">Save</button>
-    </div>
-  </div>
-</div>
 <div id="toastMsg" class="toast-msg"></div>
 
 <script>
@@ -620,8 +657,8 @@
   let tasks = [];
   let lists = [{ id: "default_inbox", name: "Inbox" }];
   let currentView = { type: "smart", value: "all" };
-  let editingTaskId = null;
-  let currentSort = "created"; // name, created, due
+  let currentSort = "created";
+  let currentDetailTaskId = null;
 
   function saveData() { localStorage.setItem("todo_clone_data", JSON.stringify({ tasks, lists })); }
   function loadData() {
@@ -643,23 +680,12 @@
     saveData();
   }
 
-  // Sorting
   function sortTasks(taskArray) {
     const sorted = [...taskArray];
     switch(currentSort) {
-      case 'name':
-        sorted.sort((a,b) => a.title.localeCompare(b.title));
-        break;
-      case 'created':
-        sorted.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
-        break;
-      case 'due':
-        sorted.sort((a,b) => {
-          let da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
-          let db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
-          return da - db;
-        });
-        break;
+      case 'name': sorted.sort((a,b) => a.title.localeCompare(b.title)); break;
+      case 'created': sorted.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0)); break;
+      case 'due': sorted.sort((a,b) => { let da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity; let db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity; return da - db; }); break;
       default: sorted.sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
     }
     return sorted;
@@ -680,7 +706,6 @@
   function computeNextDate(fromDate, recurrence) {
     if (!recurrence || recurrence.period === "none") return null;
     let date = new Date(fromDate);
-    if (isNaN(date.getTime())) date = new Date();
     const interval = recurrence.interval || 1;
     switch(recurrence.period) {
       case 'day': date.setDate(date.getDate() + interval); break;
@@ -727,48 +752,42 @@
       if (currentView.type === "list" && currentView.id === list.id) div.style.background = "var(--nav-active-bg)";
       const nameSpan = document.createElement("span");
       nameSpan.innerHTML = `<i class="fas fa-list-ul"></i><span class="list-name-text" data-list-id="${list.id}">${escapeHtml(list.name)}</span>`;
+      const editBtn = document.createElement("button");
+      editBtn.className = "edit-list-icon";
+      editBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
       const delBtn = document.createElement("button");
       delBtn.className = "delete-list";
       delBtn.setAttribute("data-id", list.id);
       delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
       div.appendChild(nameSpan);
+      div.appendChild(editBtn);
       div.appendChild(delBtn);
       
-      // Edit list name on click
+      // Open list page on name click
       const nameText = nameSpan.querySelector('.list-name-text');
       nameText.addEventListener('click', (e) => {
         e.stopPropagation();
-        const oldName = list.name;
-        const input = document.createElement('input');
-        input.value = oldName;
-        input.style.width = '120px';
-        input.style.background = 'var(--card-bg)';
-        input.style.color = 'var(--text-primary)';
-        input.style.border = '1px solid var(--input-border)';
-        input.style.borderRadius = '8px';
-        input.style.padding = '4px 8px';
-        nameText.replaceWith(input);
-        input.focus();
-        const saveEdit = () => {
-          const newName = input.value.trim();
-          if(newName && newName !== oldName) {
-            list.name = newName;
-            saveData();
-            renderUI();
-            showToast(`List renamed to "${newName}"`);
-          } else if(!newName) showToast("Name cannot be empty");
-          else renderUI();
-        };
-        input.addEventListener('blur', saveEdit);
-        input.addEventListener('keypress', (e) => { if(e.key === 'Enter') saveEdit(); });
+        currentView = { type: "list", id: list.id };
+        renderUI();
+        hideSidebarAndShowBack();
       });
-      
-      div.addEventListener("click", (e) => { 
-        if(!e.target.closest(".delete-list") && !e.target.closest('.list-name-text') && e.target !== input) { 
-          currentView = { type: "list", id: list.id }; 
+      // Edit list name via pencil icon
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const newName = prompt("Edit list name:", list.name);
+        if(newName && newName.trim()) {
+          list.name = newName.trim();
+          saveData();
+          renderUI();
+          showToast(`List renamed to "${list.name}"`);
+        }
+      });
+      div.addEventListener("click", (e) => {
+        if(!e.target.closest(".delete-list") && !e.target.closest('.edit-list-icon') && e.target !== nameText) {
+          currentView = { type: "list", id: list.id };
           renderUI();
           hideSidebarAndShowBack();
-        } 
+        }
       });
       delBtn.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -777,7 +796,6 @@
           lists = lists.filter(l => l.id !== list.id);
           if(currentView.type==="list" && currentView.id===list.id) currentView = { type: "smart", value: "all" };
           saveData(); renderUI(); showToast(`"${list.name}" deleted`);
-          if (currentView.type === "smart") hideSidebarAndShowBack();
         }
       });
       container.appendChild(div);
@@ -798,28 +816,18 @@
     container.innerHTML = filtered.map(task => `
       <div class="task-card ${task.completed ? 'completed-task' : ''}" data-id="${task.id}">
         <input type="checkbox" class="task-check" ${task.completed ? 'checked' : ''} data-id="${task.id}">
-        <div class="task-info">
-          <div class="task-title">
-            <span>${escapeHtml(task.title)}</span>
-            ${task.important ? '<i class="fas fa-star important-star" data-id="'+task.id+'"></i>' : '<i class="far fa-star important-star" data-id="'+task.id+'"></i>'}
-            ${task.recurrence && task.recurrence.period !== 'none' ? `<span class="badge"><i class="fas fa-sync-alt"></i> ${task.recurrence.period}${task.recurrence.interval>1 ? ` ${task.recurrence.interval}` : ''}</span>` : ''}
-          </div>
-          <div class="task-meta">
-            ${task.dueDate ? `<span class="badge"><i class="far fa-calendar-alt"></i> ${formatDate(task.dueDate)}</span>` : ''}
-            ${task.reminderTime ? `<span class="badge"><i class="far fa-bell"></i> ${formatDateTime(task.reminderTime)}</span>` : ''}
-          </div>
-        </div>
-        <div class="task-actions">
-          <i class="far fa-edit" data-action="edit" data-id="${task.id}"></i>
-          <i class="far fa-trash-alt" data-action="delete" data-id="${task.id}"></i>
-        </div>
+        <div class="task-title">${escapeHtml(task.title)}</div>
+        <i class="${task.important ? 'fas fa-star important-star' : 'far fa-star important-star'}" data-id="${task.id}"></i>
       </div>
     `).join('');
-    // attach events
-    document.querySelectorAll('.task-check').forEach(cb => cb.addEventListener('change', (e) => handleTaskComplete(cb.getAttribute('data-id'), cb.checked)));
-    document.querySelectorAll('.important-star').forEach(star => star.addEventListener('click', (e) => { let tid=star.getAttribute('data-id'); let t=tasks.find(x=>x.id===tid); if(t){t.important=!t.important; saveData(); renderUI(); showToast(t.important?'Marked important':'Removed important');}}));
-    document.querySelectorAll('[data-action="edit"]').forEach(btn => btn.addEventListener('click', (e) => openEditModal(btn.getAttribute('data-id'))));
-    document.querySelectorAll('[data-action="delete"]').forEach(btn => btn.addEventListener('click', (e) => { if(confirm('Delete task?')){ tasks=tasks.filter(t=>t.id!==btn.getAttribute('data-id')); saveData(); renderUI(); showToast('Deleted');}}));
+    // Attach events
+    document.querySelectorAll('.task-check').forEach(cb => cb.addEventListener('change', (e) => { e.stopPropagation(); handleTaskComplete(cb.getAttribute('data-id'), cb.checked); }));
+    document.querySelectorAll('.important-star').forEach(star => star.addEventListener('click', (e) => { e.stopPropagation(); let tid=star.getAttribute('data-id'); let t=tasks.find(x=>x.id===tid); if(t){t.important=!t.important; saveData(); renderUI(); showToast(t.important?'Marked important':'Removed important');}}));
+    document.querySelectorAll('.task-card').forEach(card => card.addEventListener('click', (e) => {
+      if(e.target.classList.contains('task-check') || e.target.classList.contains('important-star')) return;
+      const tid = card.getAttribute('data-id');
+      openTaskDetail(tid);
+    }));
   }
 
   function handleTaskComplete(taskId, isChecked) {
@@ -839,40 +847,57 @@
     renderUI();
   }
 
-  function openEditModal(taskId) {
+  function openTaskDetail(taskId) {
     const task = tasks.find(t => t.id === taskId);
     if(!task) return;
-    editingTaskId = taskId;
-    document.getElementById("taskTitleInput").value = task.title;
-    document.getElementById("dueDateInput").value = task.dueDate ? task.dueDate.slice(0,16) : '';
-    document.getElementById("reminderTimeInput").value = task.reminderTime ? task.reminderTime.slice(0,16) : '';
-    document.getElementById("importantCheckbox").checked = task.important;
+    currentDetailTaskId = taskId;
+    const modal = document.getElementById("taskDetailModal");
+    document.getElementById("detailTitle").value = task.title;
+    document.getElementById("detailImportant").checked = task.important;
+    document.getElementById("detailDueDate").value = task.dueDate ? task.dueDate.slice(0,16) : '';
+    document.getElementById("detailReminder").value = task.reminderTime ? task.reminderTime.slice(0,16) : '';
     let interval = 1, period = "none";
     if(task.recurrence) { interval = task.recurrence.interval || 1; period = task.recurrence.period; }
-    document.getElementById("repeatInterval").value = interval;
-    document.getElementById("repeatPeriod").value = period;
-    document.getElementById("modalOverlay").classList.add("active");
+    document.getElementById("detailRepeatInterval").value = interval;
+    document.getElementById("detailRepeatPeriod").value = period;
+    modal.classList.add("active");
   }
-  function closeModal() { document.getElementById("modalOverlay").classList.remove("active"); editingTaskId=null; }
-  function saveModal() {
-    if(!editingTaskId) return;
-    const newTitle = document.getElementById("taskTitleInput").value.trim();
-    if(!newTitle) { showToast("Title required"); return; }
-    const task = tasks.find(t => t.id === editingTaskId);
+
+  function closeTaskDetail() {
+    document.getElementById("taskDetailModal").classList.remove("active");
+    currentDetailTaskId = null;
+  }
+
+  function saveTaskDetail() {
+    if(!currentDetailTaskId) return;
+    const task = tasks.find(t => t.id === currentDetailTaskId);
     if(task) {
+      const newTitle = document.getElementById("detailTitle").value.trim();
+      if(!newTitle) { showToast("Title required"); return; }
       task.title = newTitle;
-      task.dueDate = document.getElementById("dueDateInput").value ? new Date(document.getElementById("dueDateInput").value).toISOString() : null;
-      task.reminderTime = document.getElementById("reminderTimeInput").value ? new Date(document.getElementById("reminderTimeInput").value).toISOString() : null;
-      task.important = document.getElementById("importantCheckbox").checked;
-      const interval = parseInt(document.getElementById("repeatInterval").value,10);
-      const period = document.getElementById("repeatPeriod").value;
+      task.important = document.getElementById("detailImportant").checked;
+      task.dueDate = document.getElementById("detailDueDate").value ? new Date(document.getElementById("detailDueDate").value).toISOString() : null;
+      task.reminderTime = document.getElementById("detailReminder").value ? new Date(document.getElementById("detailReminder").value).toISOString() : null;
+      const interval = parseInt(document.getElementById("detailRepeatInterval").value,10);
+      const period = document.getElementById("detailRepeatPeriod").value;
       if(period !== "none") task.recurrence = { interval: interval || 1, period: period };
       else task.recurrence = null;
       saveData();
       renderUI();
       showToast("Task updated");
+      closeTaskDetail();
     }
-    closeModal();
+  }
+
+  function deleteCurrentTask() {
+    if(!currentDetailTaskId) return;
+    if(confirm("Delete this task?")) {
+      tasks = tasks.filter(t => t.id !== currentDetailTaskId);
+      saveData();
+      renderUI();
+      showToast("Task deleted");
+      closeTaskDetail();
+    }
   }
 
   function addTask(title, listId=null) {
@@ -886,8 +911,6 @@
     saveData(); renderUI(); return true;
   }
 
-  function formatDate(iso) { if(!iso) return ''; const d=new Date(iso); const today=new Date(); today.setHours(0,0,0,0); const target=new Date(d); target.setHours(0,0,0,0); const diff=(target-today)/86400000; if(diff===0) return 'Today'; if(diff===1) return 'Tomorrow'; return target.toLocaleDateString(); }
-  function formatDateTime(iso) { if(!iso) return ''; return new Date(iso).toLocaleString(undefined, {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}); }
   function showToast(msg) { const t=document.getElementById("toastMsg"); t.innerText=msg; t.style.opacity='1'; setTimeout(()=>t.style.opacity='0',2300); }
   function escapeHtml(str) { return str.replace(/[&<>]/g, m=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
 
@@ -929,12 +952,20 @@
     });
   });
   document.getElementById("addListBtn").addEventListener("click",()=>{ let name=prompt("List name:"); if(name?.trim()){ const id="list_"+Date.now(); lists.push({id,name:name.trim()}); saveData(); renderUI(); currentView={type:"list",id}; renderUI(); hideSidebarAndShowBack(); showToast(`"${name}" created`); }});
-  document.getElementById("modalCancelBtn").addEventListener("click",closeModal);
-  document.getElementById("modalSaveBtn").addEventListener("click",saveModal);
   document.getElementById("darkModeSidebarBtn").addEventListener("click",toggleDarkMode);
   document.getElementById("closeSidebarBtn").addEventListener("click", () => setSidebarVisible(false));
   document.getElementById("backNavBtn").addEventListener("click", () => setSidebarVisible(true));
-  document.getElementById("modalOverlay").addEventListener("click",e=>{if(e.target===document.getElementById("modalOverlay")) closeModal();});
+  document.getElementById("sidebarOverlay").addEventListener("click", () => setSidebarVisible(false));
+  
+  // Task detail modal events
+  document.getElementById("closeDetailBtn").addEventListener("click", closeTaskDetail);
+  document.getElementById("deleteTaskBtn").addEventListener("click", deleteCurrentTask);
+  document.getElementById("detailTitle").addEventListener("change", saveTaskDetail);
+  document.getElementById("detailImportant").addEventListener("change", saveTaskDetail);
+  document.getElementById("detailDueDate").addEventListener("change", saveTaskDetail);
+  document.getElementById("detailReminder").addEventListener("change", saveTaskDetail);
+  document.getElementById("detailRepeatInterval").addEventListener("change", saveTaskDetail);
+  document.getElementById("detailRepeatPeriod").addEventListener("change", saveTaskDetail);
   
   // Sort menu
   const menuBtn = document.getElementById("menuDotsBtn");
