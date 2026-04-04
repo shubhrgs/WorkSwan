@@ -284,16 +284,25 @@
     .dark-mode-sidebar {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 14px;
       padding: 12px 16px;
       border-radius: 12px;
       cursor: pointer;
       color: var(--text-secondary);
       font-weight: 500;
+      transition: background 0.2s;
+    }
+    .dark-mode-sidebar:hover {
+      background: var(--nav-hover);
     }
     .dark-mode-sidebar i {
       width: 24px;
       font-size: 18px;
+      transition: transform 0.3s ease;
+    }
+    .dark-mode-sidebar:hover i {
+      transform: scale(1.1);
     }
 
     /* MAIN CONTENT */
@@ -346,7 +355,6 @@
       flex-wrap: wrap;
       margin-bottom: 28px;
     }
-    /* List/task name in accent color */
     .view-header h1 {
       font-size: 28px;
       font-weight: 600;
@@ -575,12 +583,12 @@
       display: flex;
     }
     
-    /* Back button for Detail Page - Matches list page spacing */
+    /* Back button for Detail Page */
     .detail-back-nav {
       display: flex;
       align-items: center;
       gap: 6px;
-      margin-bottom: 16px; /* Same spacing as list page */
+      margin-bottom: 16px;
       cursor: pointer;
       width: fit-content;
       padding: 4px 0;
@@ -603,7 +611,6 @@
       transform: translateX(-2px);
     }
 
-    /* Header content area */
     .detail-header-row {
       display: flex;
       justify-content: space-between;
@@ -618,7 +625,6 @@
       flex: 1;
       min-width: 0;
     }
-    /* Task name in detail view is accent color */
     .detail-title-input {
       font-size: 24px;
       font-weight: 600;
@@ -747,7 +753,6 @@
     .detail-notes-input::placeholder {
       color: var(--text-muted);
     }
-    /* Save notes button */
     .save-notes-btn {
       margin-top: 10px;
       background: none;
@@ -857,6 +862,34 @@
       color: var(--popup-text);
       font-size: 16px;
       font-family: inherit;
+    }
+
+    /* FIX #1: Date/Time Picker Accent Color Override */
+    input[type="datetime-local"],
+    input[type="date"],
+    input[type="time"] {
+      accent-color: var(--accent-color);
+      color-scheme: inherit;
+    }
+    input[type="datetime-local"]:focus,
+    input[type="date"]:focus,
+    input[type="time"]:focus {
+      outline: none;
+      border-color: var(--accent-color) !important;
+      box-shadow: 0 0 0 3px rgba(192, 70, 87, 0.2);
+    }
+    /* Webkit calendar icon tinting */
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+    input[type="date"]::-webkit-calendar-picker-indicator,
+    input[type="time"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+    input[type="date"]::-webkit-calendar-picker-indicator:hover,
+    input[type="time"]::-webkit-calendar-picker-indicator:hover {
+      opacity: 1;
     }
     
     .repeat-options {
@@ -1026,8 +1059,9 @@
     </div>
     <div id="customListsContainer" class="custom-list-container"></div>
     <div class="sidebar-footer">
-      <div class="dark-mode-sidebar" id="darkModeSidebarBtn">
-        <i class="fas fa-moon"></i> <span>Dark mode</span>
+      <!-- FIX #2: Icon-only theme toggle (no text) -->
+      <div class="dark-mode-sidebar" id="darkModeSidebarBtn" title="Toggle theme">
+        <i class="fas fa-sun" id="themeToggleIcon"></i>
       </div>
     </div>
   </div>
@@ -1052,12 +1086,11 @@
 
 <!-- Task Detail Modal -->
 <div id="taskDetailModal" class="detail-modal">
-  <!-- Back navigation - Separate row with margin-bottom: 16px to match list page -->
+  <!-- Back navigation -->
   <div class="detail-back-nav" id="detailBackBtn">
     <i class="fas fa-arrow-left"></i> <span>Back</span>
   </div>
   
-  <!-- Title and actions row -->
   <div class="detail-header-row">
     <div class="detail-title-box">
       <input type="text" id="detailTitle" class="detail-title-input" placeholder="Task title">
@@ -1107,7 +1140,6 @@
   <div class="detail-notes-section">
     <label class="detail-notes-label">Add notes</label>
     <textarea class="detail-notes-input" id="detailNotes" placeholder="Add details, links, or context..."></textarea>
-    <!-- Save notes button -->
     <button class="save-notes-btn" id="saveNotesBtn">Save notes</button>
   </div>
   
@@ -1513,7 +1545,6 @@
     currentDetailTaskId = null;
   }
 
-  // Save notes explicitly
   function saveNotesExplicit() {
     if(!currentDetailTaskId) return;
     const task = tasks.find(t => t.id === currentDetailTaskId);
@@ -1621,7 +1652,7 @@
     if(saved==='true') document.body.classList.add('dark'); 
     else document.body.classList.remove('dark'); 
   }
-  
+
   // DYNAMIC PWA THEME COLOR FIX
   function updateDynamicThemeColor() {
     const isDark = document.body.classList.contains('dark');
@@ -1629,11 +1660,21 @@
     const meta = document.getElementById('themeColorMeta');
     if (meta) meta.setAttribute('content', themeColor);
   }
+
+  // FIX #2: Update theme toggle icon dynamically
+  function updateThemeToggleIcon() {
+    const isDark = document.body.classList.contains('dark');
+    const icon = document.getElementById('themeToggleIcon');
+    if (icon) {
+      icon.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
+    }
+  }
   
   function toggleDarkMode() { 
     document.body.classList.toggle('dark'); 
     localStorage.setItem('darkMode', document.body.classList.contains('dark')); 
     updateDynamicThemeColor();
+    updateThemeToggleIcon(); // Update icon
   }
 
   function requestNotificationPermission() { if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); }
@@ -1755,7 +1796,7 @@
   document.getElementById("backNavBtn").addEventListener("click", () => setSidebarVisible(true));
   document.getElementById("sidebarOverlay").addEventListener("click", () => setSidebarVisible(false));
   
-  // Detail modal events - Back button
+  // Detail modal events
   document.getElementById("detailBackBtn").addEventListener("click", closeTaskDetail);
   document.getElementById("detailTitle").addEventListener("blur", saveCurrentTaskDetail);
   document.getElementById("detailImportantStar").addEventListener("click", () => {
@@ -1808,6 +1849,7 @@
   loadData(); 
   initDarkMode(); 
   updateDynamicThemeColor();
+  updateThemeToggleIcon(); // Set initial icon state
   requestNotificationPermission(); 
   renderUI(); 
   setSidebarVisible(true);
