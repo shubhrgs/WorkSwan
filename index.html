@@ -280,8 +280,11 @@
       padding-top: 24px;
       border-top: 1px solid var(--sidebar-border);
       margin-bottom: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
-    .dark-mode-sidebar {
+    .dark-mode-sidebar, .enable-notif-btn {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -292,17 +295,14 @@
       color: var(--text-secondary);
       font-weight: 500;
       transition: background 0.2s;
+      background: none;
+      border: none;
+      width: 100%;
+      font-family: inherit;
+      font-size: inherit;
     }
-    .dark-mode-sidebar:hover {
+    .dark-mode-sidebar:hover, .enable-notif-btn:hover {
       background: var(--nav-hover);
-    }
-    .dark-mode-sidebar i {
-      width: 24px;
-      font-size: 18px;
-      transition: transform 0.3s ease;
-    }
-    .dark-mode-sidebar:hover i {
-      transform: scale(1.1);
     }
 
     /* MAIN CONTENT */
@@ -1058,6 +1058,7 @@
     </div>
     <div id="customListsContainer" class="custom-list-container"></div>
     <div class="sidebar-footer">
+      <button class="enable-notif-btn" id="enableNotifBtn"><i class="fas fa-bell"></i><span>Enable Notifications</span></button>
       <div class="dark-mode-sidebar" id="darkModeSidebarBtn" title="Toggle theme">
         <i class="fas fa-sun" id="themeToggleIcon"></i>
       </div>
@@ -1294,9 +1295,10 @@
   function saveData() { 
     localStorage.setItem("todo_clone_data", JSON.stringify({ tasks, lists })); 
     updateAppBadge();
+    syncTasksToServiceWorker();
   }
   
-  // PWA BADGE
+  // PWA BADGE MANAGEMENT
   async function updateAppBadge() {
     if (!('setAppBadge' in navigator)) return;
     try {
@@ -1311,43 +1313,45 @@
     }
   }
 
-  function requestNotificationPermission() {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission().then(perm => {
-        if (perm === 'granted') showToast("Notifications enabled");
-      });
+  // Sync tasks with service worker for background checks
+  async function syncTasksToServiceWorker() {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'SYNC_TASKS', tasks: tasks });
     }
   }
 
-  function sendTaskNotification(task) {
-    if (Notification.permission !== "granted") return;
-    const title = task.reminderTime ? "⏰ Reminder" : "📅 Task Due";
-    const dueDisplay = task.dueDate ? ` • Due: ${formatDateTimeIST(task.dueDate)}` : '';
-    new Notification(title, {
-      body: `"${task.title}"${dueDisplay}`,
-      icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"%3E%3Crect width="192" height="192" fill="%23C04657"/%3E%3Ctext x="96" y="130" font-size="110" text-anchor="middle" fill="white" font-family="Arial"%3E✓%3C/text%3E%3C/svg%3E',
-      badge: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"%3E%3Crect width="192" height="192" fill="%23C04657"/%3E%3Ctext x="96" y="130" font-size="110" text-anchor="middle" fill="white" font-family="Arial"%3E✓%3C/text%3E%3C/svg%3E',
-      tag: `task-${task.id}`,
-      vibrate: [200, 100, 200],
-      requireInteraction: true,
-      silent: false
-    }).onclick = () => { window.focus(); openTaskDetail(task.id); };
-  }
-
-  function checkTaskNotifications() {
-    if (!("Notification" in window)) return;
-    const nowIST = getCurrentIST();
-    let updated = false;
-    tasks.forEach(t => {
-      if (t.completed || t.notified) return;
-      const triggerTime = t.reminderTime ? toISTDate(t.reminderTime) : (t.dueDate ? toISTDate(t.dueDate) : null);
-      if (triggerTime && triggerTime <= nowIST) {
-        sendTaskNotification(t);
-        t.notified = true;
-        updated = true;
+  function requestNotificationPermission() {
+    if (!("Notification" in window)) {
+      showToast("Notifications not supported");
+      return;
+    }
+    if (Notification.permission === "granted") {
+      showToast("Notifications already enabled");
+      return;
+    }
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') {
+        showToast("Notifications enabled! You will now receive reminders.");
+        updateAppBadge();
+        syncTasksToServiceWorker();
+      } else {
+        showToast("Notification permission denied");
       }
     });
-    if (updated) { saveData(); renderUI(); }
+  }
+
+  // Test notification (only works if permission granted)
+  function sendTestNotification() {
+    if (Notification.permission !== "granted") {
+      requestNotificationPermission();
+      return;
+    }
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'TEST_NOTIFICATION' });
+      showToast("Test notification sent (if permission granted)");
+    } else {
+      showToast("Service worker not ready yet");
+    }
   }
 
   function loadData() {
@@ -1360,15 +1364,16 @@
       const nowIST = getCurrentIST();
       const tomorrowIST = new Date(nowIST); tomorrowIST.setDate(nowIST.getDate()+1);
       tasks = [
-        { id: "1", title: "Review project", completed: false, important: true, dueDate: toUTCFromIST(tomorrowIST), reminderTime: null, notified: false, listId: "default_inbox", recurrence: null, createdAt: Date.now(), notes: "", myDay: false },
+        { id: "1", title: "Review project", completed: false, important: true, dueDate: toUTCFromIST(tomorrowIST), reminderTime: null, notified: false, listId: "default_inbox", recurrence: null, createdAt: Date.now() - 86400000, notes: "", myDay: false },
         { id: "2", title: "Buy groceries", completed: false, important: false, dueDate: null, reminderTime: toUTCFromIST(new Date(nowIST.getTime() + 3600000)), notified: false, listId: "default_inbox", recurrence: null, createdAt: Date.now(), notes: "", myDay: true }
       ];
       saveData();
     }
     tasks.forEach(t => { 
       if(!t.createdAt) t.createdAt = Date.now();
-      if(t.notes === undefined) t.notes = "";
+      if(t.notes === undefined || t.notes === null) t.notes = "";
       if(t.myDay === undefined) t.myDay = false;
+      if(t.notified === undefined) t.notified = false;
     });
     saveData();
   }
@@ -1391,9 +1396,13 @@
   function getFilteredTasks() {
     let filtered = [...tasks];
     if (currentView.type === "smart") {
-      if (currentView.value === "myday") filtered = filtered.filter(t => t.myDay && !t.completed);
-      else if (currentView.value === "important") filtered = filtered.filter(t => t.important);
-      else if (currentView.value === "planned") filtered = filtered.filter(t => t.dueDate);
+      if (currentView.value === "myday") {
+        filtered = filtered.filter(t => t.myDay && !t.completed);
+      } else if (currentView.value === "important") {
+        filtered = filtered.filter(t => t.important);
+      } else if (currentView.value === "planned") {
+        filtered = filtered.filter(t => t.dueDate);
+      }
     } else if (currentView.type === "list") {
       filtered = filtered.filter(t => t.listId === currentView.id);
     }
@@ -1408,7 +1417,7 @@
     switch(recurrence.period) {
       case 'day': istDate.setDate(istDate.getDate() + interval); break;
       case 'week': istDate.setDate(istDate.getDate() + (interval * 7)); break;
-      case 'weekdays':
+      case 'weekdays': 
         let daysToAdd = interval;
         while(daysToAdd > 0) {
           istDate.setDate(istDate.getDate() + 1);
@@ -1464,6 +1473,7 @@
       delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
       div.appendChild(nameSpan);
       div.appendChild(delBtn);
+      
       div.addEventListener("click", (e) => {
         if(e.target.closest(".delete-list")) return;
         currentView = { type: "list", id: list.id };
@@ -1560,10 +1570,24 @@
     container.innerHTML = html;
     
     const toggleBtn = document.getElementById("toggleCompletedBtn");
-    if (toggleBtn) toggleBtn.addEventListener("click", (e) => { e.stopPropagation(); showCompletedSection = !showCompletedSection; renderTasks(); });
+    if (toggleBtn) {
+      toggleBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        showCompletedSection = !showCompletedSection;
+        renderTasks();
+      });
+    }
     
-    document.querySelectorAll('.task-check').forEach(cb => cb.addEventListener('change', (e) => { e.stopPropagation(); handleTaskComplete(cb.getAttribute('data-id'), cb.checked); }));
-    document.querySelectorAll('.important-star').forEach(star => star.addEventListener('click', (e) => { e.stopPropagation(); let tid=star.getAttribute('data-id'); let t=tasks.find(x=>x.id===tid); if(t){ t.important=!t.important; saveData(); renderUI(); showToast(t.important?'Marked important':'Removed important'); } }));
+    document.querySelectorAll('.task-check').forEach(cb => cb.addEventListener('change', (e) => { 
+      e.stopPropagation(); 
+      handleTaskComplete(cb.getAttribute('data-id'), cb.checked); 
+    }));
+    document.querySelectorAll('.important-star').forEach(star => star.addEventListener('click', (e) => { 
+      e.stopPropagation(); 
+      let tid=star.getAttribute('data-id'); 
+      let t=tasks.find(x=>x.id===tid); 
+      if(t){ t.important=!t.important; saveData(); renderUI(); showToast(t.important?'Marked important':'Removed important'); }
+    }));
     document.querySelectorAll('.task-card').forEach(card => card.addEventListener('click', (e) => {
       if(e.target.classList.contains('task-check') || e.target.classList.contains('important-star')) return;
       openTaskDetail(card.getAttribute('data-id'));
@@ -1593,15 +1617,22 @@
     if(!task) return;
     currentDetailTaskId = taskId;
     const modal = document.getElementById("taskDetailModal");
+    
     document.getElementById("detailTitle").value = task.title;
+    
     const starEl = document.getElementById("detailImportantStar");
     starEl.className = task.important ? "fas fa-star detail-important-star filled" : "far fa-star detail-important-star";
+    
     document.getElementById("detailCompleteCheckbox").checked = task.completed;
+    
     document.getElementById("myDayValue").textContent = task.myDay ? "Added" : "Not added";
     document.getElementById("myDayValue").className = task.myDay ? "detail-action-value" : "detail-action-value empty";
+    
     document.getElementById("dueDateValue").textContent = task.dueDate ? formatDateTimeIST(task.dueDate) : "Not set";
     document.getElementById("dueDateValue").className = task.dueDate && isOverdueIST(task.dueDate) && !task.completed ? "detail-action-value overdue" : "detail-action-value";
+    
     document.getElementById("reminderValue").textContent = task.reminderTime ? formatDateTimeIST(task.reminderTime) : "Not set";
+    
     if(task.recurrence && task.recurrence.period !== "none") {
       if(task.recurrence.period === "custom") {
         document.getElementById("repeatValue").textContent = `Every ${task.recurrence.interval} ${task.recurrence.unit}`;
@@ -1612,16 +1643,27 @@
     } else {
       document.getElementById("repeatValue").textContent = "Never";
     }
+    
     document.getElementById("detailNotes").value = task.notes || "";
+    
     modal.classList.add("active");
   }
 
-  function closeTaskDetail() { document.getElementById("taskDetailModal").classList.remove("active"); currentDetailTaskId = null; }
+  function closeTaskDetail() {
+    document.getElementById("taskDetailModal").classList.remove("active");
+    currentDetailTaskId = null;
+  }
+
   function saveNotesExplicit() {
     if(!currentDetailTaskId) return;
     const task = tasks.find(t => t.id === currentDetailTaskId);
-    if(task) { task.notes = document.getElementById("detailNotes").value; saveData(); showToast("Notes saved"); }
+    if(task) {
+      task.notes = document.getElementById("detailNotes").value;
+      saveData();
+      showToast("Notes saved");
+    }
   }
+
   function saveCurrentTaskDetail() {
     if(!currentDetailTaskId) return;
     const task = tasks.find(t => t.id === currentDetailTaskId);
@@ -1632,14 +1674,21 @@
       task.important = document.getElementById("detailImportantStar").classList.contains("filled");
       task.completed = document.getElementById("detailCompleteCheckbox").checked;
       task.notes = document.getElementById("detailNotes").value;
-      saveData(); renderUI(); showToast("Task updated"); closeTaskDetail();
+      saveData();
+      renderUI();
+      showToast("Task updated");
+      closeTaskDetail();
     }
   }
+
   function deleteCurrentTask() {
     if(!currentDetailTaskId) return;
     if(confirm("Delete this task?")) {
       tasks = tasks.filter(t => t.id !== currentDetailTaskId);
-      saveData(); renderUI(); showToast("Task deleted"); closeTaskDetail();
+      saveData();
+      renderUI();
+      showToast("Task deleted");
+      closeTaskDetail();
     }
   }
 
@@ -1662,15 +1711,18 @@
     const currentName = titleEl.innerText;
     const input = document.createElement("input");
     input.value = currentName;
-    input.style.cssText = "font-size:28px;font-weight:600;font-family:inherit;background:var(--card-bg);color:var(--text-primary);border:1px solid var(--input-border);border-radius:12px;padding:4px 8px;width:auto";
+    input.style.fontSize = "28px"; input.style.fontWeight = "600"; input.style.fontFamily = "inherit";
+    input.style.background = "var(--card-bg)"; input.style.color = "var(--text-primary)";
+    input.style.border = "1px solid var(--input-border)"; input.style.borderRadius = "12px";
+    input.style.padding = "4px 8px"; input.style.width = "auto";
     titleEl.replaceWith(input); input.focus();
     const saveEdit = () => {
       const newName = input.value.trim();
       if(newName && newName !== currentName) {
         const list = lists.find(l => l.id === currentView.id);
         if(list) { list.name = newName; saveData(); renderUI(); showToast(`List renamed to "${newName}"`); }
-        else renderUI();
-      } else renderUI();
+        else { renderUI(); }
+      } else { renderUI(); }
     };
     input.addEventListener('blur', saveEdit);
     input.addEventListener('keypress', (e) => { if(e.key === 'Enter') saveEdit(); });
@@ -1687,9 +1739,10 @@
       else if(currentView.value==="important") title="Important";
       else if(currentView.value==="planned") title="Planned";
     } else title=lists.find(l=>l.id===currentView.id)?.name||"Inbox";
+    
     const titleEl = document.getElementById("viewTitle");
     titleEl.innerText = title;
-    if(currentView.type === "list") { titleEl.style.cursor = "pointer"; titleEl.onclick = makeTitleEditable; }
+    if(currentView.type === "list") { titleEl.style.cursor = "pointer"; titleEl.onclick = () => makeTitleEditable(); }
     else { titleEl.style.cursor = "default"; titleEl.onclick = null; }
     renderSidebar(); renderTasks();
   }
@@ -1708,24 +1761,34 @@
     if(saved==='true') document.body.classList.add('dark'); 
     else document.body.classList.remove('dark'); 
   }
+
   function updateDynamicThemeColor() {
     const isDark = document.body.classList.contains('dark');
     const themeColor = isDark ? '#000000' : '#C04657';
     const meta = document.getElementById('themeColorMeta');
     if (meta) meta.setAttribute('content', themeColor);
   }
+
   function updateThemeToggleIcon() {
     const isDark = document.body.classList.contains('dark');
     const icon = document.getElementById('themeToggleIcon');
     if (icon) icon.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
   }
+  
   function toggleDarkMode() { 
     document.body.classList.toggle('dark'); 
     localStorage.setItem('darkMode', document.body.classList.contains('dark')); 
-    updateDynamicThemeColor(); updateThemeToggleIcon();
+    updateDynamicThemeColor();
+    updateThemeToggleIcon();
   }
 
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) { updateAppBadge(); checkTaskNotifications(); } });
+  // Visibility change handler: refresh badge & sync tasks when app comes to foreground
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      updateAppBadge();
+      syncTasksToServiceWorker();
+    }
+  });
 
   function openPopup(popupId) {
     currentPopup = popupId;
@@ -1761,6 +1824,7 @@
       }
     }
   }
+  
   function closePopup() {
     if(currentPopup) {
       document.getElementById(currentPopup + "Popup").classList.remove("active");
@@ -1768,16 +1832,18 @@
       currentPopup = null;
     }
   }
+  
   function saveDueDate() {
     if(!currentDetailTaskId) return;
     const task = tasks.find(t => t.id === currentDetailTaskId);
     if(task) {
       const value = document.getElementById("popupDueDate").value;
       task.dueDate = value ? convertLocalToUTC(value) : null;
-      task.notified = false;
+      task.notified = false; // Reset notification for new due date
       saveData(); renderUI(); openTaskDetail(currentDetailTaskId); closePopup(); showToast("Due date updated");
     }
   }
+  
   function saveReminder() {
     if(!currentDetailTaskId) return;
     const task = tasks.find(t => t.id === currentDetailTaskId);
@@ -1788,6 +1854,7 @@
       saveData(); renderUI(); openTaskDetail(currentDetailTaskId); closePopup(); showToast("Reminder updated");
     }
   }
+  
   function saveRepeat() {
     if(!currentDetailTaskId) return;
     const task = tasks.find(t => t.id === currentDetailTaskId);
@@ -1806,6 +1873,7 @@
       saveData(); renderUI(); openTaskDetail(currentDetailTaskId); closePopup(); showToast("Repeat settings updated");
     }
   }
+  
   function toggleMyDay() {
     if(!currentDetailTaskId) return;
     const task = tasks.find(t => t.id === currentDetailTaskId);
@@ -1823,9 +1891,11 @@
   document.querySelectorAll(".nav-item").forEach(el=>{ el.addEventListener("click",()=>{ const v=el.getAttribute("data-view"); if(v) currentView={type:"smart",value:v}; renderUI(); hideSidebarAndShowBack(); }); });
   document.getElementById("addListBtn").addEventListener("click",()=>{ let name=prompt("List name:"); if(name?.trim()){ const id="list_"+Date.now(); lists.push({id,name:name.trim()}); saveData(); renderUI(); currentView={type:"list",id}; renderUI(); hideSidebarAndShowBack(); showToast(`"${name}" created`); }});
   document.getElementById("darkModeSidebarBtn").addEventListener("click",toggleDarkMode);
+  document.getElementById("enableNotifBtn").addEventListener("click", requestNotificationPermission);
   document.getElementById("closeSidebarBtn").addEventListener("click", () => setSidebarVisible(false));
   document.getElementById("backNavBtn").addEventListener("click", () => setSidebarVisible(true));
   document.getElementById("sidebarOverlay").addEventListener("click", () => setSidebarVisible(false));
+  
   document.getElementById("detailBackBtn").addEventListener("click", closeTaskDetail);
   document.getElementById("detailTitle").addEventListener("blur", saveCurrentTaskDetail);
   document.getElementById("detailImportantStar").addEventListener("click", () => {
@@ -1858,6 +1928,7 @@
   });
   document.getElementById("saveNotesBtn").addEventListener("click", saveNotesExplicit);
   document.getElementById("detailDeleteBtn").addEventListener("click", deleteCurrentTask);
+  
   const menuBtn = document.getElementById("menuDotsBtn");
   const sortMenu = document.getElementById("sortMenu");
   menuBtn.addEventListener("click", (e) => { e.stopPropagation(); sortMenu.classList.toggle("show"); });
@@ -1872,19 +1943,46 @@
     });
   });
 
+  // Service worker registration and message handling
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      console.log('Service Worker registered');
+      if (Notification.permission === 'granted') {
+        syncTasksToServiceWorker();
+      }
+    }).catch(err => console.error('Service Worker registration failed:', err));
+    
+    navigator.serviceWorker.addEventListener('message', event => {
+      if (event.data.type === 'NOTIFICATION_CLICK') {
+        openTaskDetail(event.data.taskId);
+      } else if (event.data.type === 'UPDATE_NOTIFIED') {
+        // Update notified flags from service worker (if needed)
+        const updatedTasks = event.data.tasks;
+        if (updatedTasks && updatedTasks.length) {
+          tasks = tasks.map(t => {
+            const updated = updatedTasks.find(ut => ut.id === t.id);
+            if (updated) t.notified = updated.notified;
+            return t;
+          });
+          saveData();
+        }
+      }
+    });
+  }
+
   // Initialize
   loadData(); 
   initDarkMode(); 
   updateDynamicThemeColor();
   updateThemeToggleIcon();
   updateAppBadge();
-  requestNotificationPermission(); 
   renderUI(); 
   setSidebarVisible(true);
-  setInterval(checkTaskNotifications, 30000);
-  checkTaskNotifications();
-  if('serviceWorker' in navigator) {
-    window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(e=>console.log(e)));
+  
+  // Request permission on first load? Better to let user click button.
+  // But if already granted, sync tasks.
+  if (Notification.permission === 'granted') {
+    setTimeout(() => syncTasksToServiceWorker(), 1000);
   }
 </script>
 </body>
