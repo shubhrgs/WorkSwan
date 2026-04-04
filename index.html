@@ -16,9 +16,9 @@
       box-sizing: border-box;
     }
 
-    /* Light / Dark variables - ULTRA DARK for dark mode */
+    /* Light / Dark variables */
     :root {
-      --accent-color: #C04657; /* Brick Red - Hex:#C04657, RGB:192,70,87 */
+      --accent-color: #C04657;
       --accent-rgb: 192, 70, 87;
       --bg-app: #ffffff;
       --sidebar-bg: #fafafa;
@@ -36,23 +36,23 @@
       --badge-bg: #f0f2f5;
       --icon-color: #7a7a7a;
       --delete-btn-hover: #f0f0f0;
-      --modal-bg: #000000; /* Ultra dark black */
-      --modal-text: #ffffff;
-      --modal-border: #1a1a1a;
+      --modal-bg: #ffffff; /* Light mode modal background */
+      --modal-text: #1e1e2f;
+      --modal-border: #e1e5ea;
       --toast-bg: #1f1f1f;
       --toast-text: white;
       --overlay-bg: rgba(0,0,0,0.3);
-      --popup-bg: #0a0a0a;
-      --popup-text: #ffffff;
-      --star-color: #9a9a9a; /* Grey hollow star for monochrome design */
+      --popup-bg: #ffffff;
+      --popup-text: #1e1e2f;
+      --star-color: #9a9a9a;
       --star-filled: var(--accent-color);
       --completed-section-color: var(--accent-color);
       --overdue-color: var(--accent-color);
-      --myday-color: #FFB347; /* Warm sun color for My Day */
+      --myday-icon-color: #9a9a9a; /* Grey for monochrome design */
     }
 
     body.dark {
-      --bg-app: #000000; /* Ultra dark black - NO blue hue */
+      --bg-app: #000000;
       --sidebar-bg: #0a0a0a;
       --sidebar-border: #1a1a1a;
       --text-primary: #f0f0f0;
@@ -68,7 +68,7 @@
       --badge-bg: #1a1a1a;
       --icon-color: #999999;
       --delete-btn-hover: #1a1a1a;
-      --modal-bg: #000000;
+      --modal-bg: #000000; /* Dark mode modal background */
       --modal-text: #ffffff;
       --modal-border: #1a1a1a;
       --toast-bg: #e4e4e7;
@@ -80,7 +80,7 @@
       --star-filled: var(--accent-color);
       --completed-section-color: var(--accent-color);
       --overdue-color: var(--accent-color);
-      --myday-color: #FFB347;
+      --myday-icon-color: #9a9a9a;
     }
 
     body {
@@ -108,7 +108,7 @@
       background: var(--overlay-bg);
       z-index: 5;
       display: none;
-      backdrop-filter: blur(2px);
+      /* REMOVED backdrop-filter to fix blur issue */
     }
     body.sidebar-hidden .sidebar-overlay {
       display: none;
@@ -116,6 +116,10 @@
     @media (max-width: 768px) {
       body:not(.sidebar-hidden) .sidebar-overlay {
         display: block;
+      }
+      /* Prevent main content stretch when sidebar is open on mobile */
+      body:not(.sidebar-hidden) .main-content {
+        transform: translateX(280px);
       }
     }
 
@@ -203,15 +207,13 @@
       background: var(--nav-hover);
     }
     
-    /* My Day special styling */
-    .nav-item[data-view="myday"] i {
-      color: var(--myday-color);
+    .nav-item[data-view="myday"] i,
+    .nav-item[data-view="myday"] svg {
+      color: var(--myday-icon-color) !important;
+      stroke: var(--myday-icon-color) !important;
     }
     .nav-item.active[data-view="myday"] {
-      color: var(--myday-color);
-    }
-    .nav-item.active[data-view="myday"] i {
-      color: var(--myday-color);
+      color: var(--accent-color);
     }
 
     .list-header {
@@ -360,7 +362,6 @@
       width: 100%;
     }
     
-    /* Sort indicator in accent color */
     .sort-indicator {
       font-size: 13px;
       color: var(--accent-color);
@@ -379,7 +380,6 @@
       margin-bottom: 24px;
     }
     
-    /* Completed section header */
     .completed-section-header {
       display: flex;
       align-items: center;
@@ -414,7 +414,6 @@
       background: var(--nav-hover);
     }
 
-    /* Minimal task card - FIXED star positioning */
     .task-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -431,8 +430,7 @@
       background: var(--nav-hover);
     }
     
-    /* Round circle checkboxes */
-    .task-check, .detail-complete-checkbox, .popup-datetime-picker input[type="checkbox"] {
+    .task-check, .detail-complete-checkbox {
       width: 20px;
       height: 20px;
       border-radius: 50%;
@@ -445,6 +443,7 @@
       position: relative;
       background: transparent;
       transition: all 0.2s;
+      flex-shrink: 0;
     }
     .task-check:checked, .detail-complete-checkbox:checked {
       background: var(--accent-color);
@@ -477,13 +476,12 @@
       color: var(--text-muted);
     }
     
-    /* Star positioned at rightmost edge */
     .important-star {
       color: var(--star-color);
       cursor: pointer;
       font-size: 18px;
       transition: color 0.2s;
-      margin-left: auto; /* Push to right edge */
+      margin-left: auto;
       flex-shrink: 0;
       padding: 4px;
       border-radius: 8px;
@@ -501,7 +499,6 @@
       color: var(--text-muted);
     }
     
-    /* Task due date display */
     .task-due-date {
       font-size: 12px;
       color: var(--text-muted);
@@ -513,7 +510,6 @@
       font-weight: 500;
     }
 
-    /* ADD TASK PANE (bottom) - single plus button on right */
     .add-task-pane {
       background: var(--card-bg);
       border: 1px solid var(--input-border);
@@ -546,14 +542,14 @@
       padding: 0 8px;
     }
 
-    /* TASK DETAIL MODAL - Updated with dark background and new header */
+    /* TASK DETAIL MODAL - Theme-aware background */
     .detail-modal {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: var(--modal-bg); /* Ultra dark black background */
+      background: var(--modal-bg); /* Now respects theme */
       color: var(--modal-text);
       z-index: 1000;
       overflow-y: auto;
@@ -571,7 +567,7 @@
       margin-bottom: 32px;
       padding-bottom: 20px;
       border-bottom: 1px solid var(--modal-border);
-      gap: 16px; /* FIXED: Added gap between checkbox area and close button */
+      gap: 16px;
     }
     .detail-header-content {
       display: flex;
@@ -617,12 +613,11 @@
       color: var(--star-filled);
     }
     .detail-important-star:hover {
-      background: rgba(255,255,255,0.1);
+      background: rgba(128,128,128,0.15);
     }
     .detail-complete-checkbox {
       transform: scale(1.3);
       cursor: pointer;
-      accent-color: var(--accent-color);
     }
     .close-detail {
       background: none;
@@ -634,13 +629,12 @@
       border-radius: 50%;
       transition: background 0.2s;
       flex-shrink: 0;
-      margin-left: 8px; /* Extra spacing from checkbox */
+      margin-left: 8px;
     }
     .close-detail:hover {
       background: var(--nav-hover);
     }
     
-    /* Action buttons below title */
     .detail-actions-list {
       display: flex;
       flex-direction: column;
@@ -658,7 +652,7 @@
       transition: background 0.15s;
     }
     .detail-action-item:hover {
-      background: rgba(255,255,255,0.08);
+      background: rgba(128,128,128,0.1);
     }
     .detail-action-icon {
       width: 28px;
@@ -696,13 +690,14 @@
       font-weight: 500;
     }
     
-    /* My Day action item */
     .detail-action-item.myday-action .detail-action-icon {
-      background: rgba(255, 179, 71, 0.15);
-      color: var(--myday-color);
+      background: rgba(154, 154, 154, 0.15);
+      color: var(--myday-icon-color);
+    }
+    .detail-action-item.myday-action .detail-action-icon svg {
+      stroke: var(--myday-icon-color) !important;
     }
     
-    /* Notes section */
     .detail-notes-section {
       margin-bottom: 32px;
     }
@@ -719,7 +714,7 @@
       padding: 14px;
       border: 1px solid var(--modal-border);
       border-radius: 16px;
-      background: rgba(255,255,255,0.05);
+      background: rgba(128,128,128,0.08);
       color: var(--modal-text);
       font-size: 15px;
       font-family: inherit;
@@ -729,7 +724,6 @@
       color: var(--text-muted);
     }
     
-    /* Delete button at bottom right */
     .detail-delete-btn {
       position: fixed;
       bottom: 24px;
@@ -757,7 +751,7 @@
       transform: scale(0.95);
     }
 
-    /* Bottom popup sheets */
+    /* Bottom popup sheets - Theme-aware */
     .popup-sheet {
       position: fixed;
       bottom: 0;
@@ -818,13 +812,12 @@
       padding: 14px;
       border: 1px solid var(--modal-border);
       border-radius: 16px;
-      background: rgba(255,255,255,0.08);
+      background: rgba(128,128,128,0.08);
       color: var(--popup-text);
       font-size: 16px;
       font-family: inherit;
     }
     
-    /* Repeat options */
     .repeat-options {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -835,7 +828,7 @@
       padding: 14px;
       border: 1px solid var(--modal-border);
       border-radius: 16px;
-      background: rgba(255,255,255,0.05);
+      background: rgba(128,128,128,0.08);
       text-align: center;
       cursor: pointer;
       font-size: 14px;
@@ -855,7 +848,7 @@
       padding: 16px;
       border: 1px solid var(--modal-border);
       border-radius: 16px;
-      background: rgba(255,255,255,0.05);
+      background: rgba(128,128,128,0.08);
     }
     .repeat-custom.show {
       display: flex;
@@ -875,7 +868,7 @@
       padding: 10px 14px;
       border: 1px solid var(--modal-border);
       border-radius: 12px;
-      background: rgba(255,255,255,0.08);
+      background: rgba(128,128,128,0.08);
       color: var(--popup-text);
       font-size: 15px;
     }
@@ -884,13 +877,12 @@
       padding: 10px 14px;
       border: 1px solid var(--modal-border);
       border-radius: 12px;
-      background: rgba(255,255,255,0.08);
+      background: rgba(128,128,128,0.08);
       color: var(--popup-text);
       font-size: 15px;
       font-family: inherit;
     }
     
-    /* Overlay for popups */
     .popup-overlay {
       position: fixed;
       top: 0;
@@ -900,7 +892,6 @@
       background: var(--overlay-bg);
       z-index: 1099;
       display: none;
-      backdrop-filter: blur(2px);
     }
     .popup-overlay.active {
       display: block;
@@ -976,9 +967,9 @@
       <button class="close-sidebar-btn" id="closeSidebarBtn"><i class="fas fa-times"></i></button>
     </div>
     <div class="nav-group">
-      <!-- My Day option with sun SVG icon -->
+      <!-- My Day with GREY sun SVG for monochrome design -->
       <div class="nav-item" data-view="myday">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--myday-color)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--myday-icon-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="5"></circle>
           <line x1="12" y1="1" x2="12" y2="3"></line>
           <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -1040,12 +1031,10 @@
     <button class="close-detail" id="closeDetailBtn"><i class="fas fa-times"></i></button>
   </div>
   
-  <!-- Action buttons below title -->
   <div class="detail-actions-list">
-    <!-- My Day action - NEW -->
     <div class="detail-action-item myday-action" id="myDayAction">
       <div class="detail-action-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--myday-icon-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="5"></circle>
           <line x1="12" y1="1" x2="12" y2="3"></line>
           <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -1078,13 +1067,11 @@
     </div>
   </div>
   
-  <!-- Notes section -->
   <div class="detail-notes-section">
     <label class="detail-notes-label">Add notes</label>
     <textarea class="detail-notes-input" id="detailNotes" placeholder="Add details, links, or context..."></textarea>
   </div>
   
-  <!-- Delete button at bottom right -->
   <button class="detail-delete-btn" id="detailDeleteBtn" title="Delete task">
     <i class="fas fa-trash-alt"></i>
   </button>
@@ -1169,6 +1156,7 @@
   let currentPopup = null;
 
   function saveData() { localStorage.setItem("todo_clone_data", JSON.stringify({ tasks, lists })); }
+  
   function loadData() {
     const raw = localStorage.getItem("todo_clone_data");
     if (raw) {
@@ -1184,9 +1172,10 @@
       ];
       saveData();
     }
+    // FIX #3: Ensure ALL tasks have notes field initialized
     tasks.forEach(t => { 
       if(!t.createdAt) t.createdAt = Date.now();
-      if(!t.notes) t.notes = "";
+      if(t.notes === undefined || t.notes === null) t.notes = "";
       if(t.myDay === undefined) t.myDay = false;
     });
     saveData();
@@ -1217,14 +1206,12 @@
       } else if (currentView.value === "planned") {
         filtered = filtered.filter(t => t.dueDate);
       }
-      // "all" shows everything
     } else if (currentView.type === "list") {
       filtered = filtered.filter(t => t.listId === currentView.id);
     }
     return sortTasks(filtered);
   }
 
-  // Recurrence helpers
   function computeNextDate(fromDate, recurrence) {
     if (!recurrence || recurrence.period === "none") return null;
     let date = new Date(fromDate);
@@ -1236,9 +1223,7 @@
         let daysToAdd = interval;
         while(daysToAdd > 0) {
           date.setDate(date.getDate() + 1);
-          if(date.getDay() !== 0 && date.getDay() !== 6) {
-            daysToAdd--;
-          }
+          if(date.getDay() !== 0 && date.getDay() !== 6) daysToAdd--;
         }
         break;
       case 'fortnight': date.setDate(date.getDate() + (interval * 14)); break;
@@ -1323,12 +1308,9 @@
     const now = new Date();
     const isToday = date.toDateString() === now.toDateString();
     const isTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toDateString() === date.toDateString();
-    
     const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
     if (isToday) return `Today, ${timeStr}`;
     if (isTomorrow) return `Tomorrow, ${timeStr}`;
-    
     return `${date.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${timeStr}`;
   }
   
@@ -1340,20 +1322,13 @@
   function renderTasks() {
     const container = document.getElementById("tasksContainer");
     const filtered = getFilteredTasks();
-    
     const incompleteTasks = filtered.filter(t => !t.completed);
     const completedTasks = filtered.filter(t => t.completed);
-    
     const remaining = incompleteTasks.length;
     document.getElementById("taskCount").innerText = `${filtered.length} task${filtered.length!==1?'s':''} · ${remaining} remaining`;
     
-    // FIXED: Show sort indicator for ALL sort options including creation date
     const sortIndicator = document.getElementById("sortIndicator");
-    const sortLabels = {
-      'name': 'name',
-      'created': 'creation date',
-      'due': 'due date'
-    };
+    const sortLabels = { 'name': 'name', 'created': 'creation date', 'due': 'due date' };
     if (sortLabels[currentSort]) {
       sortIndicator.textContent = `Sorted by ${sortLabels[currentSort]}`;
       sortIndicator.classList.add("show");
@@ -1367,7 +1342,6 @@
     }
     
     let html = '';
-    
     if (incompleteTasks.length > 0) {
       html += incompleteTasks.map(task => {
         const isDueOverdue = isOverdue(task.dueDate);
@@ -1396,7 +1370,6 @@
           </button>
         </div>
       `;
-      
       if (showCompletedSection) {
         html += completedTasks.map(task => {
           const isDueOverdue = isOverdue(task.dueDate);
@@ -1434,17 +1407,11 @@
       e.stopPropagation(); 
       let tid=star.getAttribute('data-id'); 
       let t=tasks.find(x=>x.id===tid); 
-      if(t){
-        t.important=!t.important; 
-        saveData(); 
-        renderUI(); 
-        showToast(t.important?'Marked important':'Removed important');
-      }
+      if(t){ t.important=!t.important; saveData(); renderUI(); showToast(t.important?'Marked important':'Removed important'); }
     }));
     document.querySelectorAll('.task-card').forEach(card => card.addEventListener('click', (e) => {
       if(e.target.classList.contains('task-check') || e.target.classList.contains('important-star')) return;
-      const tid = card.getAttribute('data-id');
-      openTaskDetail(tid);
+      openTaskDetail(card.getAttribute('data-id'));
     }));
   }
 
@@ -1458,11 +1425,7 @@
         task.recurrence = null;
       }
       task.completed = true;
-      // Remove from My Day when completed
-      if (task.myDay) {
-        task.myDay = false;
-        showToast("Removed from My Day");
-      }
+      if (task.myDay) { task.myDay = false; showToast("Removed from My Day"); }
     } else if (!isChecked && task.completed) {
       task.completed = false;
     }
@@ -1479,15 +1442,10 @@
     document.getElementById("detailTitle").value = task.title;
     
     const starEl = document.getElementById("detailImportantStar");
-    if(task.important) {
-      starEl.className = "fas fa-star detail-important-star filled";
-    } else {
-      starEl.className = "far fa-star detail-important-star";
-    }
+    starEl.className = task.important ? "fas fa-star detail-important-star filled" : "far fa-star detail-important-star";
     
     document.getElementById("detailCompleteCheckbox").checked = task.completed;
     
-    // My Day value
     document.getElementById("myDayValue").textContent = task.myDay ? "Added" : "Not added";
     document.getElementById("myDayValue").className = task.myDay ? "detail-action-value" : "detail-action-value empty";
     
@@ -1500,20 +1458,14 @@
       if(task.recurrence.period === "custom") {
         document.getElementById("repeatValue").textContent = `Every ${task.recurrence.interval} ${task.recurrence.unit}`;
       } else {
-        const labels = {
-          "day": "Daily",
-          "week": "Weekly", 
-          "weekdays": "Weekdays",
-          "fortnight": "Fortnightly",
-          "month": "Monthly",
-          "year": "Yearly"
-        };
+        const labels = { "day": "Daily", "week": "Weekly", "weekdays": "Weekdays", "fortnight": "Fortnightly", "month": "Monthly", "year": "Yearly" };
         document.getElementById("repeatValue").textContent = labels[task.recurrence.period] || "Custom";
       }
     } else {
       document.getElementById("repeatValue").textContent = "Never";
     }
     
+    // FIX #3: Load notes properly
     document.getElementById("detailNotes").value = task.notes || "";
     
     modal.classList.add("active");
@@ -1533,6 +1485,7 @@
       task.title = newTitle;
       task.important = document.getElementById("detailImportantStar").classList.contains("filled");
       task.completed = document.getElementById("detailCompleteCheckbox").checked;
+      // FIX #3: Save notes properly
       task.notes = document.getElementById("detailNotes").value;
       saveData();
       renderUI();
@@ -1557,22 +1510,12 @@
     let target = listId || (currentView.type==="list" ? currentView.id : "default_inbox");
     const newTask = {
       id: Date.now()+'-'+Math.random().toString(36),
-      title: title.trim(), 
-      completed: false, 
-      important: false, 
-      dueDate: null, 
-      reminderTime: null, 
-      notified: false, 
-      listId: target, 
-      recurrence: null, 
-      createdAt: Date.now(),
-      notes: "",
-      myDay: currentView.value === "myday" // Auto-add to My Day if viewing My Day
+      title: title.trim(), completed: false, important: false, dueDate: null, reminderTime: null, 
+      notified: false, listId: target, recurrence: null, createdAt: Date.now(),
+      notes: "", myDay: currentView.value === "myday"
     };
     tasks.unshift(newTask);
-    saveData(); 
-    renderUI(); 
-    return true;
+    saveData(); renderUI(); return true;
   }
 
   function makeTitleEditable() {
@@ -1581,45 +1524,25 @@
     const currentName = titleEl.innerText;
     const input = document.createElement("input");
     input.value = currentName;
-    input.style.fontSize = "28px";
-    input.style.fontWeight = "600";
-    input.style.fontFamily = "inherit";
-    input.style.background = "var(--card-bg)";
-    input.style.color = "var(--text-primary)";
-    input.style.border = "1px solid var(--input-border)";
-    input.style.borderRadius = "12px";
-    input.style.padding = "4px 8px";
-    input.style.width = "auto";
-    titleEl.replaceWith(input);
-    input.focus();
+    input.style.fontSize = "28px"; input.style.fontWeight = "600"; input.style.fontFamily = "inherit";
+    input.style.background = "var(--card-bg)"; input.style.color = "var(--text-primary)";
+    input.style.border = "1px solid var(--input-border)"; input.style.borderRadius = "12px";
+    input.style.padding = "4px 8px"; input.style.width = "auto";
+    titleEl.replaceWith(input); input.focus();
     const saveEdit = () => {
       const newName = input.value.trim();
       if(newName && newName !== currentName) {
         const list = lists.find(l => l.id === currentView.id);
-        if(list) {
-          list.name = newName;
-          saveData();
-          renderUI();
-          showToast(`List renamed to "${newName}"`);
-        } else { renderUI(); }
-      } else {
-        renderUI();
-      }
+        if(list) { list.name = newName; saveData(); renderUI(); showToast(`List renamed to "${newName}"`); }
+        else { renderUI(); }
+      } else { renderUI(); }
     };
     input.addEventListener('blur', saveEdit);
     input.addEventListener('keypress', (e) => { if(e.key === 'Enter') saveEdit(); });
   }
 
-  function showToast(msg) { 
-    const t=document.getElementById("toastMsg"); 
-    t.innerText=msg; 
-    t.style.opacity='1'; 
-    setTimeout(()=>t.style.opacity='0',2300); 
-  }
-  
-  function escapeHtml(str) { 
-    return str.replace(/[&<>"']/g, m=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m])); 
-  }
+  function showToast(msg) { const t=document.getElementById("toastMsg"); t.innerText=msg; t.style.opacity='1'; setTimeout(()=>t.style.opacity='0',2300); }
+  function escapeHtml(str) { return str.replace(/[&<>"']/g, m=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m])); }
 
   function renderUI() {
     let title="";
@@ -1628,21 +1551,13 @@
       else if(currentView.value==="all") title="All Tasks";
       else if(currentView.value==="important") title="Important";
       else if(currentView.value==="planned") title="Planned";
-    }
-    else title=lists.find(l=>l.id===currentView.id)?.name||"Inbox";
+    } else title=lists.find(l=>l.id===currentView.id)?.name||"Inbox";
     
     const titleEl = document.getElementById("viewTitle");
     titleEl.innerText = title;
-    
-    if(currentView.type === "list") {
-      titleEl.style.cursor = "pointer";
-      titleEl.onclick = () => makeTitleEditable();
-    } else {
-      titleEl.style.cursor = "default";
-      titleEl.onclick = null;
-    }
-    renderSidebar();
-    renderTasks();
+    if(currentView.type === "list") { titleEl.style.cursor = "pointer"; titleEl.onclick = () => makeTitleEditable(); }
+    else { titleEl.style.cursor = "default"; titleEl.onclick = null; }
+    renderSidebar(); renderTasks();
   }
 
   let isSidebarVisible = true;
@@ -1667,9 +1582,7 @@
     if(meta) meta.setAttribute('content', document.body.classList.contains('dark')?'#000000':'#C04657'); 
   }
 
-  function requestNotificationPermission() { 
-    if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); 
-  }
+  function requestNotificationPermission() { if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); }
   
   function checkReminders() { 
     if(!("Notification" in window)) return; 
@@ -1679,55 +1592,40 @@
         t.notified=true; 
         if(Notification.permission==="granted") new Notification("⏰ Reminder",{body:`"${t.title}" is due!`}); 
         else showToast(`Reminder: ${t.title}`); 
-        saveData(); 
-        renderUI(); 
+        saveData(); renderUI(); 
       } 
     }); 
   }
   
-  // Popup sheet functions
   function openPopup(popupId) {
     currentPopup = popupId;
     document.getElementById("popupOverlay").classList.add("active");
     document.getElementById(popupId + "Popup").classList.add("active");
-    
     if(popupId === "dueDate" || popupId === "reminder") {
       const task = tasks.find(t => t.id === currentDetailTaskId);
       if(task) {
         const value = popupId === "dueDate" ? task.dueDate : task.reminderTime;
         const input = document.getElementById(popupId === "dueDate" ? "popupDueDate" : "popupReminder");
-        if(value) {
-          input.value = value.slice(0,16);
-        } else {
-          const now = new Date();
-          now.setMinutes(now.getMinutes() + 30);
-          input.value = now.toISOString().slice(0,16);
-        }
+        if(value) input.value = value.slice(0,16);
+        else { const now = new Date(); now.setMinutes(now.getMinutes() + 30); input.value = now.toISOString().slice(0,16); }
       }
     } else if(popupId === "repeat") {
       const task = tasks.find(t => t.id === currentDetailTaskId);
       if(task && task.recurrence && task.recurrence.period !== "none") {
         document.querySelectorAll(".repeat-option").forEach(opt => {
           opt.classList.remove("selected");
-          if(opt.dataset.value === task.recurrence.period) {
-            opt.classList.add("selected");
-          }
+          if(opt.dataset.value === task.recurrence.period) opt.classList.add("selected");
         });
-        
         const customSection = document.getElementById("repeatCustom");
         if(task.recurrence.period === "custom") {
           customSection.classList.add("show");
           document.getElementById("repeatInterval").value = task.recurrence.interval || 1;
           document.getElementById("repeatPeriod").value = task.recurrence.unit || "day";
-        } else {
-          customSection.classList.remove("show");
-        }
+        } else customSection.classList.remove("show");
       } else {
         document.querySelectorAll(".repeat-option").forEach(opt => {
           opt.classList.remove("selected");
-          if(opt.dataset.value === "none") {
-            opt.classList.add("selected");
-          }
+          if(opt.dataset.value === "none") opt.classList.add("selected");
         });
         document.getElementById("repeatCustom").classList.remove("show");
       }
@@ -1748,11 +1646,7 @@
     if(task) {
       const value = document.getElementById("popupDueDate").value;
       task.dueDate = value ? new Date(value).toISOString() : null;
-      saveData();
-      renderUI();
-      openTaskDetail(currentDetailTaskId);
-      closePopup();
-      showToast("Due date updated");
+      saveData(); renderUI(); openTaskDetail(currentDetailTaskId); closePopup(); showToast("Due date updated");
     }
   }
   
@@ -1763,11 +1657,7 @@
       const value = document.getElementById("popupReminder").value;
       task.reminderTime = value ? new Date(value).toISOString() : null;
       task.notified = false;
-      saveData();
-      renderUI();
-      openTaskDetail(currentDetailTaskId);
-      closePopup();
-      showToast("Reminder updated");
+      saveData(); renderUI(); openTaskDetail(currentDetailTaskId); closePopup(); showToast("Reminder updated");
     }
   }
   
@@ -1777,36 +1667,19 @@
     if(task) {
       const selectedOption = document.querySelector(".repeat-option.selected");
       if(!selectedOption) return;
-      
       const period = selectedOption.dataset.value;
-      
-      if(period === "none") {
-        task.recurrence = null;
-      } else if(period === "custom") {
+      if(period === "none") task.recurrence = null;
+      else if(period === "custom") {
         const interval = parseInt(document.getElementById("repeatInterval").value) || 1;
         const unit = document.getElementById("repeatPeriod").value;
-        task.recurrence = { 
-          period: "custom", 
-          interval: interval, 
-          unit: unit 
-        };
+        task.recurrence = { period: "custom", interval: interval, unit: unit };
       } else {
-        task.recurrence = { 
-          period: period, 
-          interval: period === "weekdays" || period === "fortnight" ? 1 : undefined,
-          unit: period === "day" ? "day" : period === "week" || period === "weekdays" || period === "fortnight" ? "week" : period === "month" ? "month" : "year"
-        };
+        task.recurrence = { period: period, interval: period === "weekdays" || period === "fortnight" ? 1 : undefined, unit: period === "day" ? "day" : period === "week" || period === "weekdays" || period === "fortnight" ? "week" : period === "month" ? "month" : "year" };
       }
-      
-      saveData();
-      renderUI();
-      openTaskDetail(currentDetailTaskId);
-      closePopup();
-      showToast("Repeat settings updated");
+      saveData(); renderUI(); openTaskDetail(currentDetailTaskId); closePopup(); showToast("Repeat settings updated");
     }
   }
   
-  // My Day toggle function
   function toggleMyDay() {
     if(!currentDetailTaskId) return;
     const task = tasks.find(t => t.id === currentDetailTaskId);
@@ -1814,47 +1687,19 @@
       task.myDay = !task.myDay;
       document.getElementById("myDayValue").textContent = task.myDay ? "Added" : "Not added";
       document.getElementById("myDayValue").className = task.myDay ? "detail-action-value" : "detail-action-value empty";
-      saveData();
-      renderUI();
-      showToast(task.myDay ? "Added to My Day" : "Removed from My Day");
+      saveData(); renderUI(); showToast(task.myDay ? "Added to My Day" : "Removed from My Day");
     }
   }
 
   // Event listeners
-  document.getElementById("addIconBtn").addEventListener("click",()=>{ 
-    const inp=document.getElementById("newTaskInput"); 
-    if(inp.value.trim()) addTask(inp.value); 
-    inp.value=""; 
-  });
+  document.getElementById("addIconBtn").addEventListener("click",()=>{ const inp=document.getElementById("newTaskInput"); if(inp.value.trim()) addTask(inp.value); inp.value=""; });
   document.getElementById("newTaskInput").addEventListener("keypress",e=>{if(e.key==="Enter") document.getElementById("addIconBtn").click();});
-  
-  document.querySelectorAll(".nav-item").forEach(el=>{
-    el.addEventListener("click",()=>{
-      const v=el.getAttribute("data-view");
-      if(v) currentView={type:"smart",value:v};
-      renderUI();
-      hideSidebarAndShowBack();
-    });
-  });
-  document.getElementById("addListBtn").addEventListener("click",()=>{ 
-    let name=prompt("List name:"); 
-    if(name?.trim()){ 
-      const id="list_"+Date.now(); 
-      lists.push({id,name:name.trim()}); 
-      saveData(); 
-      renderUI(); 
-      currentView={type:"list",id}; 
-      renderUI(); 
-      hideSidebarAndShowBack(); 
-      showToast(`"${name}" created`); 
-    }
-  });
+  document.querySelectorAll(".nav-item").forEach(el=>{ el.addEventListener("click",()=>{ const v=el.getAttribute("data-view"); if(v) currentView={type:"smart",value:v}; renderUI(); hideSidebarAndShowBack(); }); });
+  document.getElementById("addListBtn").addEventListener("click",()=>{ let name=prompt("List name:"); if(name?.trim()){ const id="list_"+Date.now(); lists.push({id,name:name.trim()}); saveData(); renderUI(); currentView={type:"list",id}; renderUI(); hideSidebarAndShowBack(); showToast(`"${name}" created`); }});
   document.getElementById("darkModeSidebarBtn").addEventListener("click",toggleDarkMode);
   document.getElementById("closeSidebarBtn").addEventListener("click", () => setSidebarVisible(false));
   document.getElementById("backNavBtn").addEventListener("click", () => setSidebarVisible(true));
   document.getElementById("sidebarOverlay").addEventListener("click", () => setSidebarVisible(false));
-  
-  // Task detail modal events
   document.getElementById("closeDetailBtn").addEventListener("click", closeTaskDetail);
   document.getElementById("detailTitle").addEventListener("blur", saveCurrentTaskDetail);
   document.getElementById("detailImportantStar").addEventListener("click", () => {
@@ -1863,81 +1708,41 @@
     if(task) {
       task.important = !task.important;
       const starEl = document.getElementById("detailImportantStar");
-      if(task.important) {
-        starEl.className = "fas fa-star detail-important-star filled";
-      } else {
-        starEl.className = "far fa-star detail-important-star";
-      }
-      saveData();
-      renderUI();
-      showToast(task.important ? "Marked important" : "Removed important");
+      starEl.className = task.important ? "fas fa-star detail-important-star filled" : "far fa-star detail-important-star";
+      saveData(); renderUI(); showToast(task.important ? "Marked important" : "Removed important");
     }
   });
-  document.getElementById("detailCompleteCheckbox").addEventListener("change", (e) => {
-    if(!currentDetailTaskId) return;
-    handleTaskComplete(currentDetailTaskId, e.target.checked);
-    closeTaskDetail();
-  });
-  
-  // Action buttons
+  document.getElementById("detailCompleteCheckbox").addEventListener("change", (e) => { if(!currentDetailTaskId) return; handleTaskComplete(currentDetailTaskId, e.target.checked); closeTaskDetail(); });
   document.getElementById("myDayAction").addEventListener("click", toggleMyDay);
   document.getElementById("dueDateAction").addEventListener("click", () => openPopup("dueDate"));
   document.getElementById("reminderAction").addEventListener("click", () => openPopup("reminder"));
   document.getElementById("repeatAction").addEventListener("click", () => openPopup("repeat"));
-  
-  // Popup events
   document.getElementById("popupOverlay").addEventListener("click", closePopup);
   document.getElementById("dueDateDoneBtn").addEventListener("click", saveDueDate);
   document.getElementById("reminderDoneBtn").addEventListener("click", saveReminder);
   document.getElementById("repeatDoneBtn").addEventListener("click", saveRepeat);
-  
   document.querySelectorAll(".repeat-option").forEach(option => {
     option.addEventListener("click", () => {
       document.querySelectorAll(".repeat-option").forEach(opt => opt.classList.remove("selected"));
       option.classList.add("selected");
-      
       const customSection = document.getElementById("repeatCustom");
-      if(option.dataset.value === "custom") {
-        customSection.classList.add("show");
-      } else {
-        customSection.classList.remove("show");
-      }
+      if(option.dataset.value === "custom") customSection.classList.add("show");
+      else customSection.classList.remove("show");
     });
   });
-  
   document.getElementById("detailDeleteBtn").addEventListener("click", deleteCurrentTask);
-  
-  // Sort menu
   const menuBtn = document.getElementById("menuDotsBtn");
   const sortMenu = document.getElementById("sortMenu");
   menuBtn.addEventListener("click", (e) => { e.stopPropagation(); sortMenu.classList.toggle("show"); });
   document.addEventListener("click", () => sortMenu.classList.remove("show"));
   document.querySelectorAll("[data-sort]").forEach(el => {
-    el.addEventListener("click", (e) => { 
-      currentSort = el.getAttribute("data-sort"); 
-      renderUI(); 
-      sortMenu.classList.remove("show"); 
-      const sortLabels = {
-        'name': 'name',
-        'created': 'creation date',
-        'due': 'due date'
-      };
-      showToast(`Sorted by ${sortLabels[currentSort] || currentSort}`); 
-    });
+    el.addEventListener("click", (e) => { currentSort = el.getAttribute("data-sort"); renderUI(); sortMenu.classList.remove("show"); const sortLabels = { 'name': 'name', 'created': 'creation date', 'due': 'due date' }; showToast(`Sorted by ${sortLabels[currentSort] || currentSort}`); });
   });
 
   // Initialize
-  loadData(); 
-  initDarkMode(); 
-  requestNotificationPermission(); 
-  renderUI(); 
-  setSidebarVisible(true);
-  setInterval(checkReminders,30000); 
-  checkReminders();
-  
-  if('serviceWorker' in navigator) {
-    window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(e=>console.log(e)));
-  }
+  loadData(); initDarkMode(); requestNotificationPermission(); renderUI(); setSidebarVisible(true);
+  setInterval(checkReminders,30000); checkReminders();
+  if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(e=>console.log(e)));
 </script>
 </body>
 </html>
