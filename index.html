@@ -158,7 +158,6 @@
       align-items: center;
       gap: 12px;
     }
-    /* Fix #2: Accent color tick icon */
     .logo-left i {
       font-size: 28px;
       color: var(--accent-color);
@@ -309,7 +308,7 @@
       position: relative;
     }
 
-    /* Fix #4: Back button as clickable text link */
+    /* Back button as clickable text link */
     .back-nav {
       display: none;
       align-items: center;
@@ -347,7 +346,7 @@
       flex-wrap: wrap;
       margin-bottom: 28px;
     }
-    /* Fix #3: List/task name in accent color */
+    /* List/task name in accent color */
     .view-header h1 {
       font-size: 28px;
       font-weight: 600;
@@ -576,7 +575,7 @@
       display: flex;
     }
     
-    /* Fix #5: Back button instead of X */
+    /* Back button instead of X */
     .detail-header {
       display: flex;
       justify-content: space-between;
@@ -600,6 +599,7 @@
       font-family: inherit;
       flex-shrink: 0;
       transition: opacity 0.2s;
+      margin-right: 12px; /* FIX #1: Proper spacing from task name */
     }
     .detail-back-btn i {
       font-size: 14px;
@@ -623,7 +623,7 @@
       flex: 1;
       min-width: 0;
     }
-    /* Fix #3: Task name in detail view is accent color */
+    /* Task name in detail view is accent color */
     .detail-title-input {
       font-size: 24px;
       font-weight: 600;
@@ -752,7 +752,7 @@
     .detail-notes-input::placeholder {
       color: var(--text-muted);
     }
-    /* Fix #1: Save notes button */
+    /* Save notes button */
     .save-notes-btn {
       margin-top: 10px;
       background: none;
@@ -1058,7 +1058,7 @@
 <!-- Task Detail Modal -->
 <div id="taskDetailModal" class="detail-modal">
   <div class="detail-header">
-    <!-- Fix #5: Back button instead of X -->
+    <!-- Back button instead of X -->
     <button class="detail-back-btn" id="detailBackBtn">
       <i class="fas fa-arrow-left"></i> <span>Back</span>
     </button>
@@ -1112,7 +1112,7 @@
   <div class="detail-notes-section">
     <label class="detail-notes-label">Add notes</label>
     <textarea class="detail-notes-input" id="detailNotes" placeholder="Add details, links, or context..."></textarea>
-    <!-- Fix #1: Save notes button -->
+    <!-- Save notes button -->
     <button class="save-notes-btn" id="saveNotesBtn">Save notes</button>
   </div>
   
@@ -1518,7 +1518,7 @@
     currentDetailTaskId = null;
   }
 
-  // FIX #1: Explicit save notes function
+  // Save notes explicitly
   function saveNotesExplicit() {
     if(!currentDetailTaskId) return;
     const task = tasks.find(t => t.id === currentDetailTaskId);
@@ -1627,11 +1627,18 @@
     else document.body.classList.remove('dark'); 
   }
   
+  // DYNAMIC PWA THEME COLOR FIX
+  function updateDynamicThemeColor() {
+    const isDark = document.body.classList.contains('dark');
+    const themeColor = isDark ? '#000000' : '#C04657';
+    const meta = document.getElementById('themeColorMeta');
+    if (meta) meta.setAttribute('content', themeColor);
+  }
+  
   function toggleDarkMode() { 
     document.body.classList.toggle('dark'); 
     localStorage.setItem('darkMode', document.body.classList.contains('dark')); 
-    const meta=document.getElementById('themeColorMeta'); 
-    if(meta) meta.setAttribute('content', document.body.classList.contains('dark')?'#000000':'#C04657'); 
+    updateDynamicThemeColor(); // Update PWA theme color dynamically
   }
 
   function requestNotificationPermission() { if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); }
@@ -1754,7 +1761,6 @@
   document.getElementById("sidebarOverlay").addEventListener("click", () => setSidebarVisible(false));
   
   // Detail modal events
-  // FIX #5: Back button replaces X close button
   document.getElementById("detailBackBtn").addEventListener("click", closeTaskDetail);
   document.getElementById("detailTitle").addEventListener("blur", saveCurrentTaskDetail);
   document.getElementById("detailImportantStar").addEventListener("click", () => {
@@ -1785,7 +1791,6 @@
       else customSection.classList.remove("show");
     });
   });
-  // FIX #1: Save notes button event
   document.getElementById("saveNotesBtn").addEventListener("click", saveNotesExplicit);
   document.getElementById("detailDeleteBtn").addEventListener("click", deleteCurrentTask);
   
@@ -1805,9 +1810,18 @@
   });
 
   // Initialize
-  loadData(); initDarkMode(); requestNotificationPermission(); renderUI(); setSidebarVisible(true);
-  setInterval(checkReminders,30000); checkReminders();
-  if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(e=>console.log(e)));
+  loadData(); 
+  initDarkMode(); 
+  updateDynamicThemeColor(); // Set initial PWA theme color
+  requestNotificationPermission(); 
+  renderUI(); 
+  setSidebarVisible(true);
+  setInterval(checkReminders,30000); 
+  checkReminders();
+  
+  if('serviceWorker' in navigator) {
+    window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(e=>console.log(e)));
+  }
 </script>
 </body>
 </html>
