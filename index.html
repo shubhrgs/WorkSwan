@@ -308,7 +308,7 @@
       position: relative;
     }
 
-    /* Back button as clickable text link */
+    /* Back button - List Page */
     .back-nav {
       display: none;
       align-items: center;
@@ -575,21 +575,14 @@
       display: flex;
     }
     
-    /* Back button instead of X */
-    .detail-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 32px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--modal-border);
-      gap: 16px;
-    }
-    .detail-back-btn {
+    /* Back button for Detail Page - Matches list page spacing */
+    .detail-back-nav {
       display: flex;
       align-items: center;
       gap: 6px;
+      margin-bottom: 16px; /* Same spacing as list page */
       cursor: pointer;
+      width: fit-content;
       padding: 4px 0;
       background: transparent;
       border: none;
@@ -597,28 +590,30 @@
       font-weight: 500;
       font-size: 15px;
       font-family: inherit;
-      flex-shrink: 0;
       transition: opacity 0.2s;
-      margin-right: 12px; /* FIX #1: Proper spacing from task name */
     }
-    .detail-back-btn i {
+    .detail-back-nav i {
       font-size: 14px;
       transition: transform 0.15s;
     }
-    .detail-back-btn:hover {
+    .detail-back-nav:hover {
       opacity: 0.8;
     }
-    .detail-back-btn:hover i {
+    .detail-back-nav:hover i {
       transform: translateX(-2px);
     }
 
-    .detail-header-content {
+    /* Header content area */
+    .detail-header-row {
       display: flex;
+      justify-content: space-between;
       align-items: center;
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--modal-border);
       gap: 16px;
-      flex: 1;
-      min-width: 0;
     }
+
     .detail-title-box {
       flex: 1;
       min-width: 0;
@@ -1057,19 +1052,19 @@
 
 <!-- Task Detail Modal -->
 <div id="taskDetailModal" class="detail-modal">
-  <div class="detail-header">
-    <!-- Back button instead of X -->
-    <button class="detail-back-btn" id="detailBackBtn">
-      <i class="fas fa-arrow-left"></i> <span>Back</span>
-    </button>
-    <div class="detail-header-content">
-      <div class="detail-title-box">
-        <input type="text" id="detailTitle" class="detail-title-input" placeholder="Task title">
-      </div>
-      <div class="detail-actions">
-        <i class="far fa-star detail-important-star" id="detailImportantStar"></i>
-        <input type="checkbox" class="detail-complete-checkbox" id="detailCompleteCheckbox">
-      </div>
+  <!-- Back navigation - Separate row with margin-bottom: 16px to match list page -->
+  <div class="detail-back-nav" id="detailBackBtn">
+    <i class="fas fa-arrow-left"></i> <span>Back</span>
+  </div>
+  
+  <!-- Title and actions row -->
+  <div class="detail-header-row">
+    <div class="detail-title-box">
+      <input type="text" id="detailTitle" class="detail-title-input" placeholder="Task title">
+    </div>
+    <div class="detail-actions">
+      <i class="far fa-star detail-important-star" id="detailImportantStar"></i>
+      <input type="checkbox" class="detail-complete-checkbox" id="detailCompleteCheckbox">
     </div>
   </div>
   
@@ -1638,7 +1633,7 @@
   function toggleDarkMode() { 
     document.body.classList.toggle('dark'); 
     localStorage.setItem('darkMode', document.body.classList.contains('dark')); 
-    updateDynamicThemeColor(); // Update PWA theme color dynamically
+    updateDynamicThemeColor();
   }
 
   function requestNotificationPermission() { if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); }
@@ -1760,7 +1755,7 @@
   document.getElementById("backNavBtn").addEventListener("click", () => setSidebarVisible(true));
   document.getElementById("sidebarOverlay").addEventListener("click", () => setSidebarVisible(false));
   
-  // Detail modal events
+  // Detail modal events - Back button
   document.getElementById("detailBackBtn").addEventListener("click", closeTaskDetail);
   document.getElementById("detailTitle").addEventListener("blur", saveCurrentTaskDetail);
   document.getElementById("detailImportantStar").addEventListener("click", () => {
@@ -1812,7 +1807,7 @@
   // Initialize
   loadData(); 
   initDarkMode(); 
-  updateDynamicThemeColor(); // Set initial PWA theme color
+  updateDynamicThemeColor();
   requestNotificationPermission(); 
   renderUI(); 
   setSidebarVisible(true);
