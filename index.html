@@ -280,8 +280,11 @@
       padding-top: 24px;
       border-top: 1px solid var(--sidebar-border);
       margin-bottom: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
-    .dark-mode-sidebar {
+    .dark-mode-sidebar, .enable-notif-btn {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -292,17 +295,14 @@
       color: var(--text-secondary);
       font-weight: 500;
       transition: background 0.2s;
+      background: none;
+      border: none;
+      width: 100%;
+      font-family: inherit;
+      font-size: inherit;
     }
-    .dark-mode-sidebar:hover {
+    .dark-mode-sidebar:hover, .enable-notif-btn:hover {
       background: var(--nav-hover);
-    }
-    .dark-mode-sidebar i {
-      width: 24px;
-      font-size: 18px;
-      transition: transform 0.3s ease;
-    }
-    .dark-mode-sidebar:hover i {
-      transform: scale(1.1);
     }
 
     /* MAIN CONTENT */
@@ -864,12 +864,12 @@
       font-family: inherit;
     }
 
-    /* FIX #1: Date/Time Picker Accent Color Override */
+    /* Date/Time Picker Accent Color Override - Force theme color */
     input[type="datetime-local"],
     input[type="date"],
     input[type="time"] {
       accent-color: var(--accent-color);
-      color-scheme: inherit;
+      color-scheme: light dark;
     }
     input[type="datetime-local"]:focus,
     input[type="date"]:focus,
@@ -878,13 +878,19 @@
       border-color: var(--accent-color) !important;
       box-shadow: 0 0 0 3px rgba(192, 70, 87, 0.2);
     }
-    /* Webkit calendar icon tinting */
+    /* Style the calendar picker icon to match theme (webkit only) */
     input[type="datetime-local"]::-webkit-calendar-picker-indicator,
     input[type="date"]::-webkit-calendar-picker-indicator,
     input[type="time"]::-webkit-calendar-picker-indicator {
+      filter: invert(27%) sepia(81%) saturate(1846%) hue-rotate(332deg) brightness(92%) contrast(91%);
       cursor: pointer;
       opacity: 0.8;
       transition: opacity 0.2s;
+    }
+    body.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+    body.dark input[type="date"]::-webkit-calendar-picker-indicator,
+    body.dark input[type="time"]::-webkit-calendar-picker-indicator {
+      filter: invert(86%) sepia(19%) saturate(1073%) hue-rotate(314deg) brightness(97%) contrast(94%);
     }
     input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
     input[type="date"]::-webkit-calendar-picker-indicator:hover,
@@ -1059,7 +1065,7 @@
     </div>
     <div id="customListsContainer" class="custom-list-container"></div>
     <div class="sidebar-footer">
-      <!-- FIX #2: Icon-only theme toggle (no text) -->
+      <button class="enable-notif-btn" id="enableNotifBtn"><i class="fas fa-bell"></i><span>Enable Notifications</span></button>
       <div class="dark-mode-sidebar" id="darkModeSidebarBtn" title="Toggle theme">
         <i class="fas fa-sun" id="themeToggleIcon"></i>
       </div>
@@ -1086,7 +1092,6 @@
 
 <!-- Task Detail Modal -->
 <div id="taskDetailModal" class="detail-modal">
-  <!-- Back navigation -->
   <div class="detail-back-nav" id="detailBackBtn">
     <i class="fas fa-arrow-left"></i> <span>Back</span>
   </div>
@@ -1217,11 +1222,71 @@
 <div id="toastMsg" class="toast-msg"></div>
 
 <script>
-  // ========== CLOUDFLARE WORKER API ==========
-  // ⚠️ IMPORTANT: Replace this URL with your actual Cloudflare Worker URL
-  const API_BASE = 'https://https://workswan.shubhrgs.workers.dev';
+  // ---------- IST TIMEZONE HELPERS (UTC+5:30) ----------
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
-  let currentUser = null;
+  function getCurrentIST() {
+    const now = new Date();
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    return new Date(utc + IST_OFFSET_MS);
+  }
+
+  function toISTDate(isoString) {
+    if (!isoString) return null;
+    const utcDate = new Date(isoString);
+    if (isNaN(utcDate.getTime())) return null;
+    return new Date(utcDate.getTime() + IST_OFFSET_MS);
+  }
+
+  function toUTCFromIST(istDate) {
+    if (!istDate) return null;
+    return new Date(istDate.getTime() - IST_OFFSET_MS).toISOString();
+  }
+
+  function formatDateTimeIST(isoString) {
+    if (!isoString) return "Not set";
+    const istDate = toISTDate(isoString);
+    if (!istDate) return "Invalid date";
+    const nowIST = getCurrentIST();
+    const isToday = istDate.toDateString() === nowIST.toDateString();
+    const tomorrowIST = new Date(nowIST);
+    tomorrowIST.setDate(nowIST.getDate() + 1);
+    const isTomorrow = istDate.toDateString() === tomorrowIST.toDateString();
+    const timeStr = istDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (isToday) return `Today, ${timeStr}`;
+    if (isTomorrow) return `Tomorrow, ${timeStr}`;
+    return `${istDate.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${timeStr}`;
+  }
+
+  function isOverdueIST(isoString) {
+    if (!isoString) return false;
+    const istDue = toISTDate(isoString);
+    if (!istDue) return false;
+    return istDue < getCurrentIST();
+  }
+
+  function convertLocalToUTC(localDateTimeString) {
+    if (!localDateTimeString) return null;
+    const [datePart, timePart] = localDateTimeString.split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hour, minute] = timePart.split(':').map(Number);
+    const istDate = new Date(year, month-1, day, hour, minute, 0);
+    if (isNaN(istDate.getTime())) return null;
+    return toUTCFromIST(istDate);
+  }
+
+  function getISTDateFromUTC(isoString) {
+    const ist = toISTDate(isoString);
+    if (!ist) return '';
+    const year = ist.getFullYear();
+    const month = String(ist.getMonth() + 1).padStart(2, '0');
+    const day = String(ist.getDate()).padStart(2, '0');
+    const hour = String(ist.getHours()).padStart(2, '0');
+    const minute = String(ist.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hour}:${minute}`;
+  }
+
+  // ---------- DATA ----------
   let tasks = [];
   let lists = [{ id: "default_inbox", name: "Inbox" }];
   let currentView = { type: "smart", value: "all" };
@@ -1230,90 +1295,67 @@
   let showCompletedSection = true;
   let currentPopup = null;
 
-  // Helper: fetch with credentials
-  async function apiFetch(endpoint, options = {}) {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      ...options,
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json', ...options.headers },
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
+  function saveData() { 
+    localStorage.setItem("todo_clone_data", JSON.stringify({ tasks, lists })); 
+    updateAppBadge();
+    syncTasksToServiceWorker();
   }
-
-  // ======================= AUTHENTICATION =======================
-  async function initAuth() {
+  
+  // Badge shows number of incomplete tasks that are either overdue or have a passed reminder time
+  async function updateAppBadge() {
+    if (!('setAppBadge' in navigator)) return;
     try {
-      const user = await apiFetch('/api/me');
-      currentUser = user;
-      document.getElementById("googleSignInBtn").style.display = "none";
-      document.getElementById("userInfo").classList.add("show");
-      document.getElementById("userName").textContent = user.name || user.email;
-      document.getElementById("userPhoto").src = user.picture || "";
-      updateSyncStatus("signed-in");
-      await loadCloudData();
-      renderUI();
-      showToast(`☁️ Signed in as ${user.email}`);
-    } catch (err) {
-      currentUser = null;
-      document.getElementById("googleSignInBtn").style.display = "block";
-      document.getElementById("userInfo").classList.remove("show");
-      updateSyncStatus("local");
-      loadData();
-      renderUI();
-    }
-  }
-
-  document.getElementById("googleSignInBtn").onclick = () => {
-    window.location.href = `${API_BASE}/auth/login`;
-  };
-
-  document.getElementById("signOutBtn").onclick = async () => {
-    await fetch(`${API_BASE}/auth/logout`, { credentials: 'include' });
-    window.location.reload();
-  };
-
-  // ======================= DATA SYNC =======================
-  async function saveData() {
-    const data = { tasks, lists };
-    localStorage.setItem("todo_clone_data", JSON.stringify(data));
-    if (currentUser) {
-      updateSyncStatus("syncing");
-      try {
-        for (const task of tasks) {
-          await apiFetch('/api/tasks', { method: 'POST', body: JSON.stringify(task) });
+      const nowIST = getCurrentIST();
+      const count = tasks.filter(t => {
+        if (t.completed) return false;
+        let overdue = false;
+        let reminderPassed = false;
+        if (t.dueDate) {
+          const dueIST = toISTDate(t.dueDate);
+          if (dueIST && dueIST < nowIST) overdue = true;
         }
-        for (const list of lists) {
-          if (list.id !== "default_inbox") {
-            await apiFetch('/api/lists', { method: 'POST', body: JSON.stringify(list) });
-          }
+        if (t.reminderTime) {
+          const remIST = toISTDate(t.reminderTime);
+          if (remIST && remIST < nowIST) reminderPassed = true;
         }
-        updateSyncStatus("signed-in");
-      } catch (err) {
-        console.warn(err);
-        updateSyncStatus("offline");
-        showToast("⚠️ Saved locally (offline)");
+        return overdue || reminderPassed;
+      }).length;
+      
+      if (count > 0) {
+        await navigator.setAppBadge(count);
+      } else {
+        await navigator.clearAppBadge();
       }
+    } catch (e) {
+      console.warn('Badge update failed:', e);
     }
   }
 
-  async function loadCloudData() {
-    if (!currentUser) return;
-    updateSyncStatus("syncing");
-    try {
-      const [tasksData, listsData] = await Promise.all([
-        apiFetch('/api/tasks'),
-        apiFetch('/api/lists')
-      ]);
-      tasks = tasksData;
-      lists = listsData;
-      if (!lists.some(l => l.id === "default_inbox")) lists.unshift({ id: "default_inbox", name: "Inbox" });
-      updateSyncStatus("signed-in");
-    } catch (err) {
-      console.warn(err);
-      updateSyncStatus("offline");
-      loadData(); // fallback to localStorage
+  async function syncTasksToServiceWorker() {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'SYNC_TASKS', tasks: tasks });
+      updateAppBadge();
     }
+  }
+
+  function requestNotificationPermission() {
+    if (!("Notification" in window)) {
+      showToast("Notifications not supported");
+      return;
+    }
+    if (Notification.permission === "granted") {
+      showToast("Notifications already enabled");
+      return;
+    }
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') {
+        showToast("Notifications enabled! You will now receive reminders.");
+        updateAppBadge();
+        syncTasksToServiceWorker();
+      } else {
+        showToast("Notification permission denied");
+      }
+    });
   }
 
   function loadData() {
@@ -1323,11 +1365,11 @@
     }
     if (!lists.some(l => l.id === "default_inbox")) lists.unshift({ id: "default_inbox", name: "Inbox" });
     if (!tasks.length) {
-      const now = new Date();
-      const tomorrow = new Date(now); tomorrow.setDate(now.getDate()+1);
+      const nowIST = getCurrentIST();
+      const tomorrowIST = new Date(nowIST); tomorrowIST.setDate(nowIST.getDate()+1);
       tasks = [
-        { id: "1", title: "Review project", completed: false, important: true, dueDate: tomorrow.toISOString(), reminderTime: null, notified: false, listId: "default_inbox", recurrence: null, createdAt: Date.now() - 86400000, notes: "", myDay: false },
-        { id: "2", title: "Buy groceries", completed: false, important: false, dueDate: null, reminderTime: new Date(now.getTime()+3600000).toISOString(), notified: false, listId: "default_inbox", recurrence: null, createdAt: Date.now(), notes: "", myDay: true }
+        { id: "1", title: "Review project", completed: false, important: true, dueDate: toUTCFromIST(tomorrowIST), reminderTime: null, notified: false, listId: "default_inbox", recurrence: null, createdAt: Date.now() - 86400000, notes: "", myDay: false },
+        { id: "2", title: "Buy groceries", completed: false, important: false, dueDate: null, reminderTime: toUTCFromIST(new Date(nowIST.getTime() + 3600000)), notified: false, listId: "default_inbox", recurrence: null, createdAt: Date.now(), notes: "", myDay: true }
       ];
       saveData();
     }
@@ -1335,48 +1377,19 @@
       if(!t.createdAt) t.createdAt = Date.now();
       if(t.notes === undefined || t.notes === null) t.notes = "";
       if(t.myDay === undefined) t.myDay = false;
+      if(t.notified === undefined) t.notified = false;
     });
     saveData();
   }
 
-  function updateSyncStatus(status) {
-    const syncStatus = document.getElementById("syncStatus");
-    const syncText = document.getElementById("syncText");
-    const icon = syncStatus.querySelector("i");
-    syncStatus.classList.remove("syncing");
-    switch(status) {
-      case "signed-in":
-        icon.className = "fas fa-cloud";
-        icon.style.color = "var(--accent-color)";
-        syncText.textContent = "Synced to cloud";
-        break;
-      case "syncing":
-        syncStatus.classList.add("syncing");
-        icon.className = "fas fa-sync-alt";
-        icon.style.color = "var(--accent-color)";
-        syncText.textContent = "Syncing...";
-        break;
-      case "offline":
-        icon.className = "fas fa-cloud-slash";
-        icon.style.color = "var(--text-muted)";
-        syncText.textContent = "Offline mode";
-        break;
-      default:
-        icon.className = "fas fa-hard-drive";
-        icon.style.color = "var(--text-muted)";
-        syncText.textContent = "Local storage";
-    }
-  }
-
-  // ======================= UI FUNCTIONS =======================
   function sortTasks(taskArray) {
     const sorted = [...taskArray];
     switch(currentSort) {
       case 'name': sorted.sort((a,b) => a.title.localeCompare(b.title)); break;
       case 'created': sorted.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0)); break;
       case 'due': sorted.sort((a,b) => { 
-        let da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity; 
-        let db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity; 
+        let da = a.dueDate ? toISTDate(a.dueDate).getTime() : Infinity; 
+        let db = b.dueDate ? toISTDate(b.dueDate).getTime() : Infinity; 
         return da - db; 
       }); break;
       default: sorted.sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
@@ -1400,38 +1413,37 @@
     return sortTasks(filtered);
   }
 
-  function computeNextDate(fromDate, recurrence) {
+  function computeNextDateIST(fromIsoString, recurrence) {
     if (!recurrence || recurrence.period === "none") return null;
-    let date = new Date(fromDate);
+    let istDate = toISTDate(fromIsoString);
+    if (!istDate) return null;
     const interval = recurrence.interval || 1;
     switch(recurrence.period) {
-      case 'day': date.setDate(date.getDate() + interval); break;
-      case 'week': date.setDate(date.getDate() + (interval * 7)); break;
+      case 'day': istDate.setDate(istDate.getDate() + interval); break;
+      case 'week': istDate.setDate(istDate.getDate() + (interval * 7)); break;
       case 'weekdays': 
         let daysToAdd = interval;
         while(daysToAdd > 0) {
-          date.setDate(date.getDate() + 1);
-          if(date.getDay() !== 0 && date.getDay() !== 6) daysToAdd--;
+          istDate.setDate(istDate.getDate() + 1);
+          if(istDate.getDay() !== 0 && istDate.getDay() !== 6) daysToAdd--;
         }
         break;
-      case 'fortnight': date.setDate(date.getDate() + (interval * 14)); break;
-      case 'month': date.setMonth(date.getMonth() + interval); break;
-      case 'year': date.setFullYear(date.getFullYear() + interval); break;
+      case 'fortnight': istDate.setDate(istDate.getDate() + (interval * 14)); break;
+      case 'month': istDate.setMonth(istDate.getMonth() + interval); break;
+      case 'year': istDate.setFullYear(istDate.getFullYear() + interval); break;
       default: return null;
     }
-    return date;
+    return toUTCFromIST(istDate);
   }
 
   function createRecurringCopy(originalTask) {
     if (!originalTask.recurrence || originalTask.recurrence.period === "none") return null;
     let newDue = null, newReminder = null;
     if (originalTask.dueDate) {
-      newDue = computeNextDate(originalTask.dueDate, originalTask.recurrence);
-      if (newDue) newDue = newDue.toISOString();
+      newDue = computeNextDateIST(originalTask.dueDate, originalTask.recurrence);
     }
     if (originalTask.reminderTime) {
-      newReminder = computeNextDate(originalTask.reminderTime, originalTask.recurrence);
-      if (newReminder) newReminder = newReminder.toISOString();
+      newReminder = computeNextDateIST(originalTask.reminderTime, originalTask.recurrence);
     }
     return {
       id: Date.now() + "-" + Math.random().toString(36),
@@ -1490,23 +1502,6 @@
     });
   }
 
-  function formatDateTime(dateString) {
-    if (!dateString) return "Not set";
-    const date = new Date(dateString);
-    const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
-    const isTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toDateString() === date.toDateString();
-    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    if (isToday) return `Today, ${timeStr}`;
-    if (isTomorrow) return `Tomorrow, ${timeStr}`;
-    return `${date.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${timeStr}`;
-  }
-  
-  function isOverdue(dateString) {
-    if (!dateString) return false;
-    return new Date(dateString) < new Date();
-  }
-
   function renderTasks() {
     const container = document.getElementById("tasksContainer");
     const filtered = getFilteredTasks();
@@ -1532,8 +1527,8 @@
     let html = '';
     if (incompleteTasks.length > 0) {
       html += incompleteTasks.map(task => {
-        const isDueOverdue = isOverdue(task.dueDate);
-        const dueDateDisplay = task.dueDate ? `<span class="task-due-date ${isDueOverdue ? 'overdue' : ''}">${formatDateTime(task.dueDate)}</span>` : '';
+        const isDueOverdue = isOverdueIST(task.dueDate);
+        const dueDateDisplay = task.dueDate ? `<span class="task-due-date ${isDueOverdue ? 'overdue' : ''}">${formatDateTimeIST(task.dueDate)}</span>` : '';
         return `
           <div class="task-card ${task.completed ? 'completed-task' : ''}" data-id="${task.id}">
             <input type="checkbox" class="task-check" ${task.completed ? 'checked' : ''} data-id="${task.id}">
@@ -1560,8 +1555,8 @@
       `;
       if (showCompletedSection) {
         html += completedTasks.map(task => {
-          const isDueOverdue = isOverdue(task.dueDate);
-          const dueDateDisplay = task.dueDate ? `<span class="task-due-date ${isDueOverdue ? 'overdue' : ''}">${formatDateTime(task.dueDate)}</span>` : '';
+          const isDueOverdue = isOverdueIST(task.dueDate);
+          const dueDateDisplay = task.dueDate ? `<span class="task-due-date ${isDueOverdue ? 'overdue' : ''}">${formatDateTimeIST(task.dueDate)}</span>` : '';
           return `
             <div class="task-card completed-task" data-id="${task.id}">
               <input type="checkbox" class="task-check" checked data-id="${task.id}">
@@ -1637,10 +1632,10 @@
     document.getElementById("myDayValue").textContent = task.myDay ? "Added" : "Not added";
     document.getElementById("myDayValue").className = task.myDay ? "detail-action-value" : "detail-action-value empty";
     
-    document.getElementById("dueDateValue").textContent = task.dueDate ? formatDateTime(task.dueDate) : "Not set";
-    document.getElementById("dueDateValue").className = task.dueDate && isOverdue(task.dueDate) && !task.completed ? "detail-action-value overdue" : "detail-action-value";
+    document.getElementById("dueDateValue").textContent = task.dueDate ? formatDateTimeIST(task.dueDate) : "Not set";
+    document.getElementById("dueDateValue").className = task.dueDate && isOverdueIST(task.dueDate) && !task.completed ? "detail-action-value overdue" : "detail-action-value";
     
-    document.getElementById("reminderValue").textContent = task.reminderTime ? formatDateTime(task.reminderTime) : "Not set";
+    document.getElementById("reminderValue").textContent = task.reminderTime ? formatDateTimeIST(task.reminderTime) : "Not set";
     
     if(task.recurrence && task.recurrence.period !== "none") {
       if(task.recurrence.period === "custom") {
@@ -1771,7 +1766,6 @@
     else document.body.classList.remove('dark'); 
   }
 
-  // DYNAMIC PWA THEME COLOR FIX
   function updateDynamicThemeColor() {
     const isDark = document.body.classList.contains('dark');
     const themeColor = isDark ? '#000000' : '#C04657';
@@ -1779,37 +1773,26 @@
     if (meta) meta.setAttribute('content', themeColor);
   }
 
-  // FIX #2: Update theme toggle icon dynamically
   function updateThemeToggleIcon() {
     const isDark = document.body.classList.contains('dark');
     const icon = document.getElementById('themeToggleIcon');
-    if (icon) {
-      icon.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
-    }
+    if (icon) icon.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
   }
   
   function toggleDarkMode() { 
     document.body.classList.toggle('dark'); 
     localStorage.setItem('darkMode', document.body.classList.contains('dark')); 
     updateDynamicThemeColor();
-    updateThemeToggleIcon(); // Update icon
+    updateThemeToggleIcon();
   }
 
-  function requestNotificationPermission() { if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); }
-  
-  function checkReminders() { 
-    if(!("Notification" in window)) return; 
-    const now=new Date(); 
-    tasks.forEach(t=>{ 
-      if(t.reminderTime && !t.notified && !t.completed && new Date(t.reminderTime)<=now) { 
-        t.notified=true; 
-        if(Notification.permission==="granted") new Notification("⏰ Reminder",{body:`"${t.title}" is due!`}); 
-        else showToast(`Reminder: ${t.title}`); 
-        saveData(); renderUI(); 
-      } 
-    }); 
-  }
-  
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      updateAppBadge();
+      syncTasksToServiceWorker();
+    }
+  });
+
   function openPopup(popupId) {
     currentPopup = popupId;
     document.getElementById("popupOverlay").classList.add("active");
@@ -1819,8 +1802,8 @@
       if(task) {
         const value = popupId === "dueDate" ? task.dueDate : task.reminderTime;
         const input = document.getElementById(popupId === "dueDate" ? "popupDueDate" : "popupReminder");
-        if(value) input.value = value.slice(0,16);
-        else { const now = new Date(); now.setMinutes(now.getMinutes() + 30); input.value = now.toISOString().slice(0,16); }
+        if(value) input.value = getISTDateFromUTC(value);
+        else { const nowIST = getCurrentIST(); nowIST.setMinutes(nowIST.getMinutes() + 30); input.value = `${nowIST.getFullYear()}-${String(nowIST.getMonth()+1).padStart(2,'0')}-${String(nowIST.getDate()).padStart(2,'0')}T${String(nowIST.getHours()).padStart(2,'0')}:${String(nowIST.getMinutes()).padStart(2,'0')}`; }
       }
     } else if(popupId === "repeat") {
       const task = tasks.find(t => t.id === currentDetailTaskId);
@@ -1858,7 +1841,8 @@
     const task = tasks.find(t => t.id === currentDetailTaskId);
     if(task) {
       const value = document.getElementById("popupDueDate").value;
-      task.dueDate = value ? new Date(value).toISOString() : null;
+      task.dueDate = value ? convertLocalToUTC(value) : null;
+      task.notified = false;
       saveData(); renderUI(); openTaskDetail(currentDetailTaskId); closePopup(); showToast("Due date updated");
     }
   }
@@ -1868,7 +1852,7 @@
     const task = tasks.find(t => t.id === currentDetailTaskId);
     if(task) {
       const value = document.getElementById("popupReminder").value;
-      task.reminderTime = value ? new Date(value).toISOString() : null;
+      task.reminderTime = value ? convertLocalToUTC(value) : null;
       task.notified = false;
       saveData(); renderUI(); openTaskDetail(currentDetailTaskId); closePopup(); showToast("Reminder updated");
     }
@@ -1887,7 +1871,7 @@
         const unit = document.getElementById("repeatPeriod").value;
         task.recurrence = { period: "custom", interval: interval, unit: unit };
       } else {
-        task.recurrence = { period: period, interval: period === "weekdays" || period === "fortnight" ? 1 : undefined, unit: period === "day" ? "day" : period === "week" || period === "weekdays" || period === "fortnight" ? "week" : period === "month" ? "month" : "year" };
+        task.recurrence = { period: period, interval: 1, unit: period === "day" ? "day" : period === "week" || period === "weekdays" || period === "fortnight" ? "week" : period === "month" ? "month" : "year" };
       }
       saveData(); renderUI(); openTaskDetail(currentDetailTaskId); closePopup(); showToast("Repeat settings updated");
     }
@@ -1910,11 +1894,11 @@
   document.querySelectorAll(".nav-item").forEach(el=>{ el.addEventListener("click",()=>{ const v=el.getAttribute("data-view"); if(v) currentView={type:"smart",value:v}; renderUI(); hideSidebarAndShowBack(); }); });
   document.getElementById("addListBtn").addEventListener("click",()=>{ let name=prompt("List name:"); if(name?.trim()){ const id="list_"+Date.now(); lists.push({id,name:name.trim()}); saveData(); renderUI(); currentView={type:"list",id}; renderUI(); hideSidebarAndShowBack(); showToast(`"${name}" created`); }});
   document.getElementById("darkModeSidebarBtn").addEventListener("click",toggleDarkMode);
+  document.getElementById("enableNotifBtn").addEventListener("click", requestNotificationPermission);
   document.getElementById("closeSidebarBtn").addEventListener("click", () => setSidebarVisible(false));
   document.getElementById("backNavBtn").addEventListener("click", () => setSidebarVisible(true));
   document.getElementById("sidebarOverlay").addEventListener("click", () => setSidebarVisible(false));
   
-  // Detail modal events
   document.getElementById("detailBackBtn").addEventListener("click", closeTaskDetail);
   document.getElementById("detailTitle").addEventListener("blur", saveCurrentTaskDetail);
   document.getElementById("detailImportantStar").addEventListener("click", () => {
@@ -1948,7 +1932,6 @@
   document.getElementById("saveNotesBtn").addEventListener("click", saveNotesExplicit);
   document.getElementById("detailDeleteBtn").addEventListener("click", deleteCurrentTask);
   
-  // Sort menu
   const menuBtn = document.getElementById("menuDotsBtn");
   const sortMenu = document.getElementById("sortMenu");
   menuBtn.addEventListener("click", (e) => { e.stopPropagation(); sortMenu.classList.toggle("show"); });
@@ -1963,20 +1946,43 @@
     });
   });
 
+  // Service worker registration and message handling
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      console.log('Service Worker registered');
+      if (Notification.permission === 'granted') {
+        syncTasksToServiceWorker();
+      }
+    }).catch(err => console.error('Service Worker registration failed:', err));
+    
+    navigator.serviceWorker.addEventListener('message', event => {
+      if (event.data.type === 'NOTIFICATION_CLICK') {
+        openTaskDetail(event.data.taskId);
+      } else if (event.data.type === 'UPDATE_NOTIFIED') {
+        const updatedTasks = event.data.tasks;
+        if (updatedTasks && updatedTasks.length) {
+          tasks = tasks.map(t => {
+            const updated = updatedTasks.find(ut => ut.id === t.id);
+            if (updated) t.notified = updated.notified;
+            return t;
+          });
+          saveData();
+        }
+      }
+    });
+  }
+
   // Initialize
   loadData(); 
   initDarkMode(); 
   updateDynamicThemeColor();
-  updateThemeToggleIcon(); // Set initial icon state
-  requestNotificationPermission(); 
+  updateThemeToggleIcon();
+  updateAppBadge();
   renderUI(); 
   setSidebarVisible(true);
-  setInterval(checkReminders,30000); 
-  checkReminders();
-  initAuth(); // Call auth after everything else
   
-  if('serviceWorker' in navigator) {
-    window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(e=>console.log(e)));
+  if (Notification.permission === 'granted') {
+    setTimeout(() => syncTasksToServiceWorker(), 1000);
   }
 </script>
 </body>
